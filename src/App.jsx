@@ -36,9 +36,9 @@ export default function App() {
     return <Haseebauth onBack={() => setPage("home")} />;
   }
 
-  return <HaseebHomePage onGetStarted={() => setPage("auth")} />;
+  //return <HaseebHomePage onGetStarted={() => setPage("auth")} />;
   // manager | advisor
-
+return <BusinessOwnerHome />;
   // return (
   //   <div>
   //     {/* Switch Buttons */}
