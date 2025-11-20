@@ -1,13 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Header, Sidebar } from "./components/Layout";
+import { Header, Sidebar } from "./components/Mangercopnents/Layout";
 import {
   UsersPanel,
   SettingsPanel,
   AnalyticsPanel,
   SupportPanel,
-} from "./components/Panels";
-import NotificationsPanel from "./components/NotificationsPanel.jsx";
-import AccountPanel from "./components/AccountPanel.jsx";
+} from "./components/Mangercopnents/Panels";
+import NotificationsPanel from "./components/Mangercopnents/NotificationsPanel.jsx";
+import AccountPanel from "./components/Mangercopnents/AccountPanel.jsx";
 import { loadState, saveState } from "./information.js";
 
 export default function Manger() {

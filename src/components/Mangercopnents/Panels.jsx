@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { FiSearch, FiMail, FiClock } from "react-icons/fi";
-import {ROLES, STATUS, nowISO, uid, labelOf, isValidEmail, roleBadgeClass, statusBadgeClass, initialsOf,} from "../information";
+import {ROLES, STATUS, nowISO, uid, labelOf, isValidEmail, roleBadgeClass, statusBadgeClass, initialsOf,} from "../../information";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,} from "recharts";
 
 /* USERS  */
@@ -591,7 +591,6 @@ export function SettingsPanel({ settings, setSettings }) {
         </div>
       </div>
 
-      {/* RIGHT COLUMN: Manager Information */}
       <div className="col-12 col-lg-6">
         <div className="card shadow-sm h-100">
           <div className="card-body">
@@ -642,9 +641,11 @@ export function SettingsPanel({ settings, setSettings }) {
               </div>
             </div>
 
-            <button className="btn btn-dark mt-3" onClick={save}>
-              Save Settings
+          <button className="btn btn-dark mt-3" onClick={() => { save(); alert("Settings saved successfully!"); }}>
+             Save Settings
             </button>
+          
+            
           </div>
         </div>
       </div>

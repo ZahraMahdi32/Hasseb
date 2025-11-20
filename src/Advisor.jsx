@@ -1,18 +1,18 @@
 import React, { useEffect, useState } from "react";
-import { Header, Sidebar } from "./components/AdvisorLayout.jsx";
+import { Header, Sidebar } from "./components/AdivosrComponents/AdvisorLayout.jsx";
 
-import DashboardAdvisorPanel from "./components/DashboardAdvisorPanel.jsx";
-import FeedbackPanel from "./components/FeedbackPanel.jsx";
-import AnalyzerPanel from "./components/AnalyzerPanel.jsx";
+import DashboardAdvisorPanel from "./components/AdivosrComponents/DashboardAdvisorPanel.jsx";
+import FeedbackPanel from "./components/AdivosrComponents/FeedbackPanel.jsx";
+import AnalyzerPanel from "./components/AdivosrComponents/AnalyzerPanel.jsx";
 
-import BreakEvenSimulationPanel from "./components/BreakEvenSimulationPanel.jsx";
-import RiskDetailsPanel from "./components/RiskDetailsPanel.jsx";
+import BreakEvenSimulationPanel from "./components/AdivosrComponents/BreakEvenSimulationPanel.jsx";
+import RiskDetailsPanel from "./components/AdivosrComponents/RiskDetailsPanel.jsx";
 
-import SupportPanel2 from "./components/SupportPanel2.jsx";
-import TicketDetailsPanel from "./components/TicketDetailsPanel.jsx";
+import SupportPanel2 from "./components/AdivosrComponents/SupportPanel2.jsx";
+import TicketDetailsPanel from "./components/AdivosrComponents/TicketDetailsPanel.jsx";
 
-import NotificationsPanel from "./components/NotificationsPanel.jsx";
-import AccountPanel from "./components/AccountPanel.jsx";
+import NotificationsPanel from "./components/Mangercopnents/NotificationsPanel.jsx";
+import AccountPanel from "./components/AdivosrComponents/AccountPanel.jsx";
 
 import { loadState, saveState } from "./information.js";
 
