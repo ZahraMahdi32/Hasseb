@@ -25,10 +25,20 @@ import React, { useState } from "react";
 import Manager from "./Manger.jsx";   
 import Advisor from "./Advisor.jsx";
 import BusinessOwnerHome from "./components/businessOwner/BusinessOwnerHome.jsx"
+import HaseebHomePage from "./components/Home/HaseebHomePage";
+import Haseebauth from "./components/Home/Haseebauth";
 
 export default function App() {
-  const [mode, setMode] = useState("manager"); // manager | advisor
-  return <BusinessOwnerHome/>;
+  const [mode, setMode] = useState("manager");
+  const [page, setPage] = useState("home");
+
+  if (page === "auth") {
+    return <Haseebauth onBack={() => setPage("home")} />;
+  }
+
+  return <HaseebHomePage onGetStarted={() => setPage("auth")} />;
+  // manager | advisor
+
   // return (
   //   <div>
   //     {/* Switch Buttons */}
