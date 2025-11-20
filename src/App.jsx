@@ -25,10 +25,8 @@ import React, { useState } from "react";
 import Manager from "./Manger.jsx";   
 import Advisor from "./Advisor.jsx";
 
-import BusinessOwnerHome from "./components/businessOwner/BusinessOwnerHome.jsx";
-
 export default function App() {
-  const [mode, setMode] = useState("manager");
+  const [mode, setMode] = useState("manager"); // manager | advisor
 
   return (
     <div>
@@ -47,19 +45,10 @@ export default function App() {
         >
           Advisor
         </button>
-
-        <button
-          className={`btn ${mode === "businessOwner" ? "btn-dark" : "btn-outline-dark"}`}
-          onClick={() => setMode("businessOwner")}
-        >
-          Business Owner
-        </button>
       </div>
 
       {/* Render selected */}
-      {mode === "manager" && <Manager />}
-      {mode === "advisor" && <Advisor />}
-      {mode === "businessOwner" && <BusinessOwnerHome />}
+      {mode === "manager" ? <Manager /> : <Advisor />}
     </div>
   );
 }
