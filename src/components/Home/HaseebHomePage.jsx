@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { TrendingUp, DollarSign, AlertTriangle, BarChart3, PieChart, Target, ArrowRight, CheckCircle, Coffee, Lightbulb, Shield, Receipt, CreditCard, Coins } from 'lucide-react';
 import './HaseebHomePage.css';
-import { useNavigate } from 'react-router-dom';
+//import { useNavigate } from 'react-router-dom';
 
-export default function HaseebHomePage() {
+export default function HaseebHomePage({ onGetStarted }) {
     // const navigate = useNavigate();
 
     const [activeCard, setActiveCard] = useState(null);
@@ -132,7 +132,8 @@ export default function HaseebHomePage() {
 
                         <button
                             className="btn-get-started"
-                            onClick={() => navigate('/Haseebauth')}>
+                            onClick={onGetStarted}
+                        >
                             Get Started
                             <ArrowRight className="btn-icon"/>
                         </button>
@@ -251,7 +252,9 @@ export default function HaseebHomePage() {
                         <p className="cta-description">
                             Join coffee suppliers who are making smarter decisions with HASEEB
                         </p>
-                        <button className="btn-cta-primary">
+                        <button className="btn-cta-primary"
+                                onClick={onGetStarted}
+                        >
                             Get Started
                             <ArrowRight className="btn-icon" />
                         </button>
