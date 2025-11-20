@@ -1,6 +1,13 @@
 import React from "react";
-import {FiUsers, FiSettings, FiBarChart2, FiFolder, FiTrendingUp, FiUser, FiBell,} from "react-icons/fi";
-
+import {
+  FiUsers,
+  FiSettings,
+  FiBarChart2,
+  FiFolder,
+  FiTrendingUp,
+  FiUser,
+  FiBell,
+} from "react-icons/fi";
 
 export function Header({ theme, onOpenMenu }) {
   React.useEffect(() => {
@@ -33,12 +40,14 @@ export function Sidebar({ tab, setTab, isOpen, onClose }) {
 
   return (
     <>
+      {/* Backdrop */}
       <div
         className={`pm-backdrop ${isOpen ? "show" : ""}`}
         onClick={onClose}
         aria-hidden="true"
       />
 
+      {/* Sidebar */}
       <aside
         id="pmSidebar"
         className={`sidebar-neo pm-slide ${isOpen ? "is-open" : ""}`}
@@ -46,11 +55,11 @@ export function Sidebar({ tab, setTab, isOpen, onClose }) {
       >
         <div className="offcanvas-header sidebar-neo__brand">
           <div className="d-flex align-items-center gap-2">
-              <img
-      src="/assets/Haseeb.png"   
-      alt="Haseeb Logo"
-      className="sidebar-logo-img"
-    />
+            <img
+              src="/assets/Haseeb.png"
+              alt="Haseeb Logo"
+              className="sidebar-logo-img"
+            />
             <div className="sidebar-neo__logo">
               <FiTrendingUp size={20} color="#fff" />
             </div>
@@ -78,6 +87,7 @@ export function Sidebar({ tab, setTab, isOpen, onClose }) {
             })}
           </nav>
 
+          {/* Footer Dock */}
           <div className="sidebar-neo__dock">
             <button
               className="sidebar-neo__dock-btn"
@@ -90,6 +100,7 @@ export function Sidebar({ tab, setTab, isOpen, onClose }) {
             >
               <FiUser size={18} />
             </button>
+
             <button
               className="sidebar-neo__dock-btn"
               title="Notifications"
