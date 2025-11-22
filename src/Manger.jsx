@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Header, Sidebar } from "./components/Mangercopnents/Layout";
+import { useNavigate } from "react-router-dom";
+
 import {
   UsersPanel,
   SettingsPanel,
@@ -29,6 +31,12 @@ export default function Manger() {
       ? state.settings.themeOption
       : "light";
 
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem("loggedUser");
+    navigate("/");
+  };
   useEffect(() => {
     const systemTheme = window.matchMedia("(prefers-color-scheme: dark)");
 
@@ -95,6 +103,7 @@ export default function Manger() {
         onClose={function () {
           setSidebarOpen(false);
         }}
+        onLogout={handleLogout}
       />
 
       <div className="flex-grow-1 d-flex flex-column">
