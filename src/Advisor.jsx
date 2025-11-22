@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Header, Sidebar } from "./components/AdivosrComponents/AdvisorLayout.jsx";
+import { useNavigate } from "react-router-dom";
 
 import DashboardAdvisorPanel from "./components/AdivosrComponents/DashboardAdvisorPanel.jsx";
 import FeedbackPanel from "./components/AdivosrComponents/FeedbackPanel.jsx";
@@ -35,6 +36,12 @@ export default function Advisor() {
   const [selectedTicket, setSelectedTicket] = useState(null);
 
   const themeOption = state.settings?.themeOption || "light";
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem("loggedUser");
+    navigate("/");
+  };
 
   useEffect(() => {
     const systemTheme = window.matchMedia("(prefers-color-scheme: dark)");
@@ -66,6 +73,7 @@ export default function Advisor() {
           setTab(id);
           setSidebarOpen(false);
         }}
+        onLogout={handleLogout}
       />
 
       <div className="flex-grow-1 d-flex flex-column">

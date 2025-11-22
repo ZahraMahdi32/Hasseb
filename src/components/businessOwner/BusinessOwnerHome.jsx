@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import "./BusinessOwnerHome.css";
 
 import BusinessDataUpload from "./BusinessDataUpload.jsx";
@@ -21,7 +22,12 @@ export default function OwnerHome() {
     const [activeTool, setActiveTool] = useState("data");
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [hasUploadedData, setHasUploadedData] = useState(false);
+    const navigate = useNavigate();
 
+    const handleLogout = () => {
+        localStorage.removeItem("loggedUser");
+        navigate("/");
+    };
     const tools = [
         {
             id: "data",
@@ -151,7 +157,8 @@ export default function OwnerHome() {
                                 <span className="sidebar-nav-icon">{tool.icon}</span>
                                 <span className="sidebar-nav-label">{tool.name}</span>
                                 {tool.requiresData && !hasUploadedData && (
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="sidebar-nav-warning">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                         strokeWidth="2" className="sidebar-nav-warning">
                                         <circle cx="12" cy="12" r="10"></circle>
                                         <line x1="12" y1="8" x2="12" y2="12"></line>
                                         <line x1="12" y1="16" x2="12.01" y2="16"></line>
@@ -162,6 +169,19 @@ export default function OwnerHome() {
                                 )}
                             </button>
                         ))}
+                        <button
+                            className="sidebar-nav-item sidebar-nav-item--logout"
+                            onClick={handleLogout}>
+
+                            <span className="sidebar-nav-icon">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                    <polyline points="16 17 21 12 16 7"></polyline>
+                                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                                </svg>
+                            </span>
+                                        <span className="sidebar-nav-label">Logout</span>
+                        </button>
                     </nav>
                 </div>
             </aside>

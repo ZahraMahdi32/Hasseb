@@ -30,7 +30,7 @@ export function Header({ theme, onOpenMenu }) {
   );
 }
 
-export function Sidebar({ tab, setTab, isOpen, onClose }) {
+export function Sidebar({ tab, setTab, isOpen, onClose, onLogout}) {
 
   const items = [
     { id: "dashboard", label: "Dashboard", icon: <FiHome /> },
@@ -46,84 +46,95 @@ export function Sidebar({ tab, setTab, isOpen, onClose }) {
         aria-hidden="true"
       />
 
-      <aside
-        id="pmSidebar"
-        className={`sidebar-neo pm-slide ${isOpen ? "is-open" : ""}`}
-        role="navigation"
-      >
-        <div className="offcanvas-header sidebar-neo__brand">
-          <div className="d-flex align-items-center gap-2">
-            <img
-      src="/assets/Haseeb.png"   
-      alt="Haseeb Logo"
-      className="sidebar-logo-img"
-    />
-            <div className="sidebar-neo__logo">
-              <FiTrendingUp size={20} color="#fff" />
+        <aside
+            id="pmSidebar"
+            className={`sidebar-neo pm-slide ${isOpen ? "is-open" : ""}`}
+            role="navigation"
+        >
+            <div className="offcanvas-header sidebar-neo__brand">
+                <div className="d-flex align-items-center gap-2">
+                    <img
+                        src="/assets/Haseeb.png"
+                        alt="Haseeb Logo"
+                        className="sidebar-logo-img"
+                    />
+                    <div className="sidebar-neo__logo">
+                        <FiTrendingUp size={20} color="#fff"/>
+                    </div>
+                </div>
             </div>
-          </div>
-        </div>
 
-        <div className="offcanvas-body p-0 d-flex flex-column">
+            <div className="offcanvas-body p-0 d-flex flex-column">
 
-          {/* MAIN MENUS */}
-          <nav className="py-3 px-3 flex-grow-1">
-            {items.map((it) => {
-              const active = tab === it.id;
-              return (
-                <button
-                  key={it.id}
-                  onClick={() => {
-                    setTab(it.id);
-                    onClose();
-                  }}
-                  className={`sidebar-neo__item ${active ? "is-active" : ""}`}
+                {/* MAIN MENUS */}
+                <nav className="py-3 px-3 flex-grow-1">
+                    {items.map((it) => {
+                        const active = tab === it.id;
+                        return (
+                            <button
+                                key={it.id}
+                                onClick={() => {
+                                    setTab(it.id);
+                                    onClose();
+                                }}
+                                className={`sidebar-neo__item ${active ? "is-active" : ""}`}
+                            >
+                                <span className="sidebar-neo__icon">{it.icon}</span>
+                                <span className="sidebar-neo__label">{it.label}</span>
+                                {active && <span className="sidebar-neo__dot"/>}
+                            </button>
+                        );
+                    })}
+                </nav>
+
+                {/* DOCK: Account + Notifications */}
+                <div className="sidebar-neo__dock">
+                    <button
+                        className="sidebar-neo__dock-btn"
+                        onClick={() => {
+                            setTab("account");
+                            onClose();
+                        }}
+                    >
+                        <FiUser size={18}/>
+                    </button>
+
+                    <button
+                        className="sidebar-neo__dock-btn"
+                        onClick={() => {
+                            setTab("notifications");
+                            onClose();
+                        }}
+                    >
+                        <FiBell size={18}/>
+                    </button>
+                </div>
+
+                {/* HELP & SUPPORT LINK */}
+                <div
+                    className="px-3 py-2 small text-muted"
+                    style={{cursor: "pointer"}}
+                    onClick={() => {
+                        setTab("support");
+                        onClose();
+                    }}
                 >
-                  <span className="sidebar-neo__icon">{it.icon}</span>
-                  <span className="sidebar-neo__label">{it.label}</span>
-                  {active && <span className="sidebar-neo__dot" />}
-                </button>
-              );
-            })}
-          </nav>
+                    For Help & Support
+                </div>
 
-          {/* DOCK: Account + Notifications */}
-          <div className="sidebar-neo__dock">
+            </div>
             <button
-              className="sidebar-neo__dock-btn"
-              onClick={() => {
-                setTab("account");
-                onClose();
-              }}
+                className="sidebar-nav-item sidebar-nav-item--logout"
+                onClick={onLogout}
             >
-              <FiUser size={18} />
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                <span>Logout</span>
             </button>
-
-            <button
-              className="sidebar-neo__dock-btn"
-              onClick={() => {
-                setTab("notifications");
-                onClose();
-              }}
-            >
-              <FiBell size={18} />
-            </button>
-          </div>
-
-          {/* HELP & SUPPORT LINK */}
-          <div
-            className="px-3 py-2 small text-muted"
-            style={{ cursor: "pointer" }}
-            onClick={() => {
-              setTab("support");
-              onClose();
-            }}
-          >
-            For Help & Support
-          </div>
-
-        </div>
-      </aside>
+        </aside>
     </>
   );
 }
