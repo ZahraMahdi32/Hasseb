@@ -1,0 +1,26 @@
+Backend:
+Manager:
+1- Connect Manager to Advisor about ticket
+2- Connect Manager to Owner about ticket
+3- Assign projects to advisors
+4- Counter Usage over time
+5- Based on (), users are active or no
+6-
+
+Owner:
+1- Feedback Page: see prev feedback from advisor
+2- Comparing scenarios
+3- Owner Profile
+4- Parcing excel sheet
+5-
+
+Advisor:
+1-
+2-
+3-
+
+
+
+Password and Authentication
+
+
