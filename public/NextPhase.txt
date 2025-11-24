@@ -15,9 +15,14 @@ Owner:
 5-
 
 Advisor:
-1-
-2-
-3-
+1-Get Assigned Owners
+2-View client simulations
+3-Write feedback and recommendation for client
+4-Risk Analysis for Owner
+5-Show and edit and delete All Feedback for Advisor
+6-Accumulate activity points
+7-Advisor Profile
+8-submit and show new ticket 
 
 
 

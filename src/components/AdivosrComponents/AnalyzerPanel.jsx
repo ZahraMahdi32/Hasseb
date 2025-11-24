@@ -8,172 +8,181 @@ import {
   ResponsiveContainer,
   CartesianGrid,
   BarChart,
-  Bar
+  Bar,
 } from "recharts";
 
 export default function AnalyzerPanel() {
-  // ===============  DATA FOR ALL PERIODS  =================
-  const dataSets = {
-    "1D": [
-      { date: "10 AM", price: 340 },
-      { date: "12 PM", price: 342 },
-      { date: "2 PM", price: 338 },
-      { date: "4 PM", price: 344 },
-    ],
-    "1W": [
-      { date: "Mon", price: 315 },
-      { date: "Tue", price: 320 },
-      { date: "Wed", price: 318 },
-      { date: "Thu", price: 325 },
-      { date: "Fri", price: 330 },
-    ],
-    "1M": [
-      { date: "Feb 1", price: 305 },
-      { date: "Feb 8", price: 315 },
-      { date: "Feb 15", price: 318 },
-      { date: "Feb 22", price: 329 },
-      { date: "Feb 28", price: 342 },
-    ],
-    "3M": [
-      { date: "Jan 1", price: 313.9 },
-      { date: "Jan 15", price: 305.2 },
-      { date: "Feb 1", price: 318.4 },
-      { date: "Feb 20", price: 330.1 },
-      { date: "Mar 5", price: 347.8 },
-    ],
-    "1Y": [
-      { date: "Apr", price: 270 },
-      { date: "Jun", price: 300 },
-      { date: "Aug", price: 320 },
-      { date: "Oct", price: 310 },
-      { date: "Dec", price: 345 },
-    ],
+  const [client, setClient] = useState("Rakib");
+
+  // -----------------------------
+  // 🔵 بيانات كل عميل (مطابقة لأنواع رسوم البزنس أونر)
+  // -----------------------------
+
+  const data = {
+    Rakib: {
+      breakEven: [
+        { units: 0, cost: 2000, revenue: 0 },
+        { units: 50, cost: 2350, revenue: 1500 },
+        { units: 100, cost: 2700, revenue: 3000 },
+        { units: 150, cost: 3050, revenue: 4500 },
+      ],
+      pricing: [
+        { price: "10 SAR", profit: 800 },
+        { price: "12 SAR", profit: 1300 },
+        { price: "14 SAR", profit: 1800 },
+      ],
+      cashflow: [
+        { month: "Jan", inflow: 5000, outflow: 4200 },
+        { month: "Feb", inflow: 5400, outflow: 4600 },
+        { month: "Mar", inflow: 5800, outflow: 5100 },
+      ],
+      scenarios: [
+        { name: "Scenario A", profit: 1500 },
+        { name: "Scenario B", profit: 1900 },
+      ],
+    },
+
+    Abrar: {
+      breakEven: [
+        { units: 0, cost: 1800, revenue: 0 },
+        { units: 50, cost: 2100, revenue: 1200 },
+        { units: 100, cost: 2400, revenue: 2400 },
+        { units: 150, cost: 2700, revenue: 3600 },
+      ],
+      pricing: [
+        { price: "9 SAR", profit: 400 },
+        { price: "11 SAR", profit: 950 },
+        { price: "13 SAR", profit: 1400 },
+      ],
+      cashflow: [
+        { month: "Jan", inflow: 3000, outflow: 2900 },
+        { month: "Feb", inflow: 3150, outflow: 3100 },
+        { month: "Mar", inflow: 3300, outflow: 3250 },
+      ],
+      scenarios: [
+        { name: "Scenario A", profit: 800 },
+        { name: "Scenario B", profit: 1150 },
+      ],
+    },
+
+    Norah: {
+      breakEven: [
+        { units: 0, cost: 2500, revenue: 0 },
+        { units: 50, cost: 2850, revenue: 1700 },
+        { units: 100, cost: 3200, revenue: 3400 },
+        { units: 150, cost: 3550, revenue: 5100 },
+      ],
+      pricing: [
+        { price: "12 SAR", profit: 700 },
+        { price: "14 SAR", profit: 1400 },
+        { price: "16 SAR", profit: 2100 },
+      ],
+      cashflow: [
+        { month: "Jan", inflow: 4200, outflow: 4000 },
+        { month: "Feb", inflow: 4700, outflow: 4300 },
+        { month: "Mar", inflow: 5200, outflow: 4550 },
+      ],
+      scenarios: [
+        { name: "Scenario A", profit: 1100 },
+        { name: "Scenario B", profit: 1600 },
+      ],
+    },
   };
 
-  // Selected period state
-  const [period, setPeriod] = useState("3M");
-
-  // Chart data based on selected period
-  const chartData = dataSets[period];
+  const current = data[client];
 
   return (
     <div className="container-xxl">
 
-      {/* =====================  METRIC CARDS  ===================== */}
-      <div className="row g-3 mb-4">
+      {/* HEADER */}
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h4 className="fw-bold">Financial Analyzer</h4>
 
-        <div className="col-md-3">
-          <div className="card-neo p-3">
-            <h6>Current Stock Price</h6>
-            <h3>$342.87</h3>
-            <span className="text-success">+2.4%</span>
-          </div>
-        </div>
-
-        <div className="col-md-3">
-          <div className="card-neo p-3">
-            <h6>Daily Change</h6>
-            <h3>+8.23</h3>
-            <span className="text-success">+2.4%</span>
-          </div>
-        </div>
-
-        <div className="col-md-3">
-          <div className="card-neo p-3">
-            <h6>Market Trend</h6>
-            <h3>Bullish</h3>
-            <small className="text-success">↑ 7 day trend</small>
-          </div>
-        </div>
-
-        <div className="col-md-3">
-          <div className="card-neo p-3">
-            <h6>Sentiment Score</h6>
-            <h3>0.73</h3>
-            <small className="text-success">Positive</small>
-          </div>
-        </div>
+        <select
+          className="form-select w-auto"
+          value={client}
+          onChange={(e) => setClient(e.target.value)}
+        >
+          <option>Rakib</option>
+          <option>Abrar</option>
+          <option>Norah</option>
+        </select>
       </div>
 
-      {/* =====================  PRICE CHART SECTION  ===================== */}
+      {/* ------------------------------------------------- */}
+      {/* 1) BREAK-EVEN CHART */}
+      {/* ------------------------------------------------- */}
       <div className="card-neo p-4 mb-4">
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <h5>AAPL - Historical & Live Stock Prices</h5>
-
-          {/* Period buttons */}
-          <div className="d-flex gap-2">
-            {["1D", "1W", "1M", "3M", "1Y"].map(p => (
-              <button
-                key={p}
-                onClick={() => setPeriod(p)}
-                className={`btn btn-sm ${period === p ? "btn-dark" : "btn-outline-dark"}`}
-              >
-                {p}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Line Chart */}
-        <div style={{ width: "100%", height: 300 }}>
+        <h5 className="fw-bold mb-3">Break-even Analysis</h5>
+        <div style={{ width: "100%", height: 280 }}>
           <ResponsiveContainer>
-            <LineChart data={chartData}>
+            <LineChart data={current.breakEven}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
+              <XAxis dataKey="units" />
               <YAxis />
               <Tooltip />
-              <Line type="monotone" dataKey="price" stroke="#000" strokeWidth={3} dot />
+              <Line dataKey="cost" stroke="#023e8a" strokeWidth={3} />
+              <Line dataKey="revenue" stroke="#00b4d8" strokeWidth={3} />
             </LineChart>
           </ResponsiveContainer>
         </div>
-
-        <small className="text-muted mt-2 d-block">
-          Last updated: {new Date().toLocaleString()}
-        </small>
       </div>
 
-      {/* =====================  EXTRA CHART #1  ===================== */}
+      {/* ------------------------------------------------- */}
+      {/* 2) PRICING SIMULATION */}
+      {/* ------------------------------------------------- */}
       <div className="card-neo p-4 mb-4">
-        <h5 className="mb-3">Model Accuracy Comparison</h5>
-
-        <div style={{ width: "100%", height: 250 }}>
+        <h5 className="fw-bold mb-3">Pricing Simulation</h5>
+        <div style={{ width: "100%", height: 300 }}>
           <ResponsiveContainer>
-            <BarChart data={[
-              { model: "Model A", acc: 95 },
-              { model: "Model B", acc: 88 },
-              { model: "Model C", acc: 91 },
-            ]}>
+            <BarChart data={current.pricing}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="model" />
+              <XAxis dataKey="price" />
               <YAxis />
               <Tooltip />
-              <Bar dataKey="acc" fill="#000" radius={[8, 8, 0, 0]} />
+              <Bar dataKey="profit" fill="#0077b6" radius={[8, 8, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      {/* =====================  EXTRA CHART #2 (اختياري) ===================== */}
-      <div className="card-neo p-4">
-        <h5 className="mb-3">Volatility Index</h5>
-
-        <div style={{ width: "100%", height: 250 }}>
+      {/* ------------------------------------------------- */}
+      {/* 3) CASHFLOW PROJECTION */}
+      {/* ------------------------------------------------- */}
+      <div className="card-neo p-4 mb-4">
+        <h5 className="fw-bold mb-3">Cashflow Projection</h5>
+        <div style={{ width: "100%", height: 280 }}>
           <ResponsiveContainer>
-            <LineChart data={[
-              { period: "Week 1", vol: 20 },
-              { period: "Week 2", vol: 25 },
-              { period: "Week 3", vol: 22 },
-              { period: "Week 4", vol: 30 },
-            ]}>
+            <LineChart data={current.cashflow}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="period" />
+              <XAxis dataKey="month" />
               <YAxis />
               <Tooltip />
-              <Line type="monotone" dataKey="vol" stroke="#00b4d8" strokeWidth={3} />
+              <Line dataKey="inflow" stroke="#0096c7" strokeWidth={3} />
+              <Line dataKey="outflow" stroke="#d00000" strokeWidth={3} />
             </LineChart>
           </ResponsiveContainer>
         </div>
       </div>
+
+      {/* ------------------------------------------------- */}
+      {/* 4) SCENARIO COMPARISON */}
+      {/* ------------------------------------------------- */}
+      <div className="card-neo p-4 mb-5">
+        <h5 className="fw-bold mb-3">Scenario Comparison</h5>
+        <div style={{ width: "100%", height: 300 }}>
+          <ResponsiveContainer>
+            <BarChart data={current.scenarios}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="profit" fill="#03045e" radius={[8, 8, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
     </div>
   );
 }
