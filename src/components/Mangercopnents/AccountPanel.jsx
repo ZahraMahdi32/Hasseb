@@ -26,6 +26,7 @@ export default function AccountPanel({ settings, setSettings }) {
 
   const onSave = () => {
     setDirty(false);
+    fetch("",{PU})
     alert("Profile saved");
   };
 

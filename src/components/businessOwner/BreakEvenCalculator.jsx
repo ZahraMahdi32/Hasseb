@@ -23,6 +23,7 @@ function calcBreakEven({ fixedCost, variableCostPerUnit, pricePerUnit }) {
     const rawUnits = f / cmPerUnit;
     const breakEvenUnits = Math.ceil(rawUnits);
     const breakEvenSales = breakEvenUnits * p;
+    //TODO insert to DB 
 
     return { breakEvenUnits, breakEvenSales, cmPerUnit, pricePerUnit: p, variableCostPerUnit: v };
 }
@@ -38,6 +39,7 @@ function buildBreakEvenSummary(result, productName) {
             ? ((pricePerUnit - variableCostPerUnit) / pricePerUnit) * 100
             : null;
 
+            //TODO save to DB 
     return {
         productName: productName || null,
         breakEvenUnits,
