@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { FiSearch, FiMail, FiClock } from "react-icons/fi";
 import {ROLES, STATUS, nowISO, uid, labelOf, isValidEmail, roleBadgeClass, statusBadgeClass, initialsOf,} from "../../information";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,} from "recharts";
+const USERS_API_URL = "http://localhost:5001/api/users";
+
 
 /* USERS  */
 
@@ -11,12 +13,16 @@ export function UsersPanel({ users, setUsers, query, setQuery }) {
   const [statusFilter, setStatusFilter] = useState("all");
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
+
   const [draft, setDraft] = useState({
     name: "",
     email: "",
     role: ROLES[0].key,
     status: STATUS[0].key,
   });
+
+  const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
   // Filtered users
   const filtered = useMemo(() => {
@@ -33,7 +39,10 @@ export function UsersPanel({ users, setUsers, query, setQuery }) {
   }, [users, query, roleFilter, statusFilter]);
 
   function openAdd() {
+    console.log("openAdd clicked");
     setEditingId(null);
+    setErrorMessage("");
+    setSuccessMessage("");
     setDraft({
       name: "",
       email: "",
@@ -45,6 +54,8 @@ export function UsersPanel({ users, setUsers, query, setQuery }) {
 
   function openEdit(u) {
     setEditingId(u.id);
+    setErrorMessage("");
+    setSuccessMessage("");
     setDraft({
       name: u.name,
       email: u.email,
@@ -57,77 +68,114 @@ export function UsersPanel({ users, setUsers, query, setQuery }) {
   function closeModal() {
     setShowModal(false);
     setEditingId(null);
+    setErrorMessage("");
+    setSuccessMessage("");
   }
 
-  function submitModal(e) {
+  async function submitModal(e) {
     e.preventDefault();
 
+    // Clear old messages
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    // Basic validation
     if (!draft.name.trim()) {
-      alert("Name is required.");
+      setErrorMessage("Name is required.");
       return;
     }
     if (!isValidEmail(draft.email)) {
-      alert("Enter a valid email.");
+      setErrorMessage("Enter a valid email address.");
       return;
     }
 
+    // ✏️ EDIT EXISTING USER (still local)
     if (editingId) {
-      // Edit existing user
-      const emailTaken = users.some(function (u) {
-        return u.id !== editingId && u.email.toLowerCase() === draft.email.toLowerCase();
-      });
+      const emailTaken = users.some(
+        (u) =>
+          u.id !== editingId &&
+          u.email.toLowerCase() === draft.email.toLowerCase()
+      );
       if (emailTaken) {
-        alert("Email must be unique.");
+        setErrorMessage("Email already belongs to another user.");
         return;
       }
 
-      const nextUsers = users.map(function (u) {
-        if (u.id === editingId) {
-          return Object.assign({}, u, {
-            name: draft.name.trim(),
-            email: draft.email.trim(),
-            role: draft.role,
-            status: draft.status,
-          });
-        }
-        return u;
+      const updated = users.map((u) =>
+        u.id === editingId
+          ? {
+              ...u,
+              name: draft.name.trim(),
+              email: draft.email.trim(),
+              role: draft.role,
+              status: draft.status,
+            }
+          : u
+      );
+
+      setUsers(updated);
+      setSuccessMessage("User updated successfully!");
+      setTimeout(closeModal, 800);
+      return;
+    }
+
+    // ➕ ADD NEW USER (POST → Backend → MongoDB)
+    try {
+      const payload = {
+        name: draft.name.trim(),
+        email: draft.email.trim(),
+        role: draft.role,
+        status: draft.status,
+      };
+
+      const res = await fetch(USERS_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
 
-      setUsers(nextUsers);
-      closeModal();
-      return;
+      // Backend error? (409 for email duplicate)
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        setErrorMessage(err.message || "Failed to create user.");
+        return;
+      }
+
+      // Success — new user created in MongoDB
+      const saved = await res.json();
+
+      const newUser = {
+        id: saved._id || saved.id,
+        createdAt: saved.createdAt || new Date().toISOString(),
+        name: saved.name,
+        email: saved.email,
+        role: saved.role,
+        status: saved.status,
+      };
+
+      // Update UI
+      setUsers([newUser, ...users]);
+      setSuccessMessage("User added successfully!");
+
+      // Auto-close after delay
+      setTimeout(() => {
+        closeModal();
+      }, 800);
+    } catch (err) {
+      console.error(err);
+      setErrorMessage("Cannot connect to the server.");
     }
-
-    // Add new user
-    const duplicate = users.some(function (u) {
-      return u.email.toLowerCase() === draft.email.toLowerCase();
-    });
-    if (duplicate) {
-      alert("Email must be unique.");
-      return;
-    }
-
-    const newUser = {
-      id: uid(),
-      createdAt: nowISO(),
-      name: draft.name.trim(),
-      email: draft.email.trim(),
-      role: draft.role,
-      status: draft.status,
-    };
-
-    setUsers([newUser].concat(users));
-    closeModal();
   }
 
   const total = users.length;
-  const activeCount = users.filter(function (u) { return u.status === "active"; }).length;
-  const inactiveCount = users.filter(function (u) { return u.status === "inactive"; }).length;
-  const suspendedCount = users.filter(function (u) { return u.status === "suspended"; }).length;
+  const activeCount = users.filter((u) => u.status === "active").length;
+  const inactiveCount = users.filter((u) => u.status === "inactive").length;
+  const suspendedCount = users.filter((u) => u.status === "suspended").length;
 
   return (
     <div className="row g-3">
       <div className="col-12">
+        {/* Stats cards */}
         <div className="row g-3 mb-2">
           <div className="col-6 col-md-3">
             <section className="card shadow-sm border-0 p-3 rounded-3">
@@ -155,13 +203,14 @@ export function UsersPanel({ users, setUsers, query, setQuery }) {
           </div>
         </div>
 
+        {/* Toolbar */}
         <div className="toolbar d-flex flex-wrap align-items-center mb-3 p-2 rounded shadow-sm bg-light">
           <div className="flex-grow-1 me-3">
             <input
               className="form-control fs-5 py-2 shadow-sm"
               placeholder="Search users by name or email…"
               value={query}
-              onChange={function (e) { setQuery(e.target.value); }}
+              onChange={(e) => setQuery(e.target.value)}
             />
           </div>
 
@@ -169,31 +218,27 @@ export function UsersPanel({ users, setUsers, query, setQuery }) {
             <select
               className="form-select w-auto"
               value={roleFilter}
-              onChange={function (e) { setRoleFilter(e.target.value); }}
+              onChange={(e) => setRoleFilter(e.target.value)}
             >
               <option value="all">All Roles</option>
-              {ROLES.map(function (r) {
-                return (
-                  <option key={r.key} value={r.key}>
-                    {r.label}
-                  </option>
-                );
-              })}
+              {ROLES.map((r) => (
+                <option key={r.key} value={r.key}>
+                  {r.label}
+                </option>
+              ))}
             </select>
 
             <select
               className="form-select w-auto"
               value={statusFilter}
-              onChange={function (e) { setStatusFilter(e.target.value); }}
+              onChange={(e) => setStatusFilter(e.target.value)}
             >
               <option value="all">All Status</option>
-              {STATUS.map(function (s) {
-                return (
-                  <option key={s.key} value={s.key}>
-                    {s.label}
-                  </option>
-                );
-              })}
+              {STATUS.map((s) => (
+                <option key={s.key} value={s.key}>
+                  {s.label}
+                </option>
+              ))}
             </select>
 
             <button className="btn btn-dark px-4" onClick={openAdd}>
@@ -202,6 +247,7 @@ export function UsersPanel({ users, setUsers, query, setQuery }) {
           </div>
         </div>
 
+        {/* Users table */}
         <div className="card border-0 shadow-sm">
           <div className="card-body p-0">
             <div className="table-responsive">
@@ -217,58 +263,58 @@ export function UsersPanel({ users, setUsers, query, setQuery }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map(function (u) {
-                    return (
-                      <tr key={u.id}>
-                        <td className="text-center">
-                          <div
-                            className="rounded-circle bg-secondary-subtle text-secondary fw-bold d-inline-flex align-items-center justify-content-center"
-                            style={{ width: 36, height: 36 }}
-                            title={u.name}
+                  {filtered.map((u) => (
+                    <tr key={u.id}>
+                      <td className="text-center">
+                        <div
+                          className="rounded-circle bg-secondary-subtle text-secondary fw-bold d-inline-flex align-items-center justify-content-center"
+                          style={{ width: 36, height: 36 }}
+                          title={u.name}
+                        >
+                          {initialsOf(u.name)}
+                        </div>
+                      </td>
+                      <td>
+                        <div className="fw-semibold">{u.name}</div>
+                        <div className="text-muted small">{u.email}</div>
+                      </td>
+                      <td>
+                        <span className={roleBadgeClass(u.role)}>
+                          {labelOf(ROLES, u.role)}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={statusBadgeClass(u.status)}>
+                          {labelOf(STATUS, u.status)}
+                        </span>
+                      </td>
+                      <td className="text-muted small">
+                        {new Date(u.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="text-end">
+                        <div className="btn-group">
+                          <button
+                            className="btn btn-sm btn-outline-dark"
+                            onClick={() => openEdit(u)}
                           >
-                            {initialsOf(u.name)}
-                          </div>
-                        </td>
-                        <td>
-                          <div className="fw-semibold">{u.name}</div>
-                          <div className="text-muted small">{u.email}</div>
-                        </td>
-                        <td>
-                          <span className={roleBadgeClass(u.role)}>
-                            {labelOf(ROLES, u.role)}
-                          </span>
-                        </td>
-                        <td>
-                          <span className={statusBadgeClass(u.status)}>
-                            {labelOf(STATUS, u.status)}
-                          </span>
-                        </td>
-                        <td className="text-muted small">
-                          {new Date(u.createdAt).toLocaleDateString()}
-                        </td>
-                        <td className="text-end">
-                          <div className="btn-group">
-                            <button
-                              className="btn btn-sm btn-outline-dark"
-                              onClick={function () { openEdit(u); }}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              className="btn btn-sm btn-dark"
-                              onClick={function () {
-                                if (window.confirm("Delete this user?")) {
-                                  setUsers(users.filter(function (x) { return x.id !== u.id; }));
-                                }
-                              }}
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                            Edit
+                          </button>
+                          <button
+                            className="btn btn-sm btn-dark"
+                            onClick={() => {
+                              if (window.confirm("Delete this user?")) {
+                                setUsers(
+                                  users.filter((x) => x.id !== u.id)
+                                );
+                              }
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
                   {filtered.length === 0 && (
                     <tr>
                       <td colSpan={6} className="text-center text-muted py-4">
@@ -282,7 +328,7 @@ export function UsersPanel({ users, setUsers, query, setQuery }) {
           </div>
         </div>
 
-
+        {/* Modal */}
         {showModal && (
           <>
             <div className="modal-backdrop fade show" onClick={closeModal} />
@@ -298,82 +344,85 @@ export function UsersPanel({ users, setUsers, query, setQuery }) {
                     <h6 className="modal-title">
                       {editingId ? "Edit User" : "Add User"}
                     </h6>
-                    <button type="button" className="btn-close" onClick={closeModal} />
+                    <button
+                      type="button"
+                      className="btn-close"
+                      onClick={closeModal}
+                    />
                   </div>
                   <form onSubmit={submitModal}>
                     <div className="modal-body">
+                      {errorMessage && (
+                        <div className="alert alert-danger py-2 small mb-2">
+                          {errorMessage}
+                        </div>
+                      )}
+                      {successMessage && (
+                        <div className="alert alert-success py-2 small mb-2">
+                          {successMessage}
+                        </div>
+                      )}
+
                       <div className="mb-2">
-                        <label className="form-label small text-muted">Name</label>
+                        <label className="form-label small text-muted">
+                          Name
+                        </label>
                         <input
                           className="form-control"
                           value={draft.name}
-                          onChange={function (e) {
-                            setDraft(function (d) {
-                              const copy = Object.assign({}, d);
-                              copy.name = e.target.value;
-                              return copy;
-                            });
-                          }}
+                          onChange={(e) =>
+                            setDraft((d) => ({ ...d, name: e.target.value }))
+                          }
                           autoFocus
                         />
                       </div>
                       <div className="mb-2">
-                        <label className="form-label small text-muted">Email</label>
+                        <label className="form-label small text-muted">
+                          Email
+                        </label>
                         <input
                           type="email"
                           className="form-control"
                           value={draft.email}
-                          onChange={function (e) {
-                            setDraft(function (d) {
-                              const copy = Object.assign({}, d);
-                              copy.email = e.target.value;
-                              return copy;
-                            });
-                          }}
+                          onChange={(e) =>
+                            setDraft((d) => ({ ...d, email: e.target.value }))
+                          }
                         />
                       </div>
                       <div className="mb-2">
-                        <label className="form-label small text-muted">Role</label>
+                        <label className="form-label small text-muted">
+                          Role
+                        </label>
                         <select
                           className="form-select"
                           value={draft.role}
-                          onChange={function (e) {
-                            setDraft(function (d) {
-                              const copy = Object.assign({}, d);
-                              copy.role = e.target.value;
-                              return copy;
-                            });
-                          }}
+                          onChange={(e) =>
+                            setDraft((d) => ({ ...d, role: e.target.value }))
+                          }
                         >
-                          {ROLES.map(function (r) {
-                            return (
-                              <option key={r.key} value={r.key}>
-                                {r.label}
-                              </option>
-                            );
-                          })}
+                          {ROLES.map((r) => (
+                            <option key={r.key} value={r.key}>
+                              {r.label}
+                            </option>
+                          ))}
                         </select>
                       </div>
                       <div>
-                        <label className="form-label small text-muted">Status</label>
+                        <label className="form-label small text-muted">
+                          Status
+                        </label>
                         <select
                           className="form-select"
                           value={draft.status}
-                          onChange={function (e) {
-                            setDraft(function (d) {
-                              const copy = Object.assign({}, d);
-                              copy.status = e.target.value;
-                              return copy;
-                            });
-                          }}
+                          onChange={(e) =>
+                            setDraft((d) => ({ ...d, status: e.target.value }))
+                          }
                         >
-                          {STATUS.map(function (s) {
-                            return (
-                              <option key={s.key} value={s.key}>
-                                {s.label}
-                              </option>
-                            );
-                          })}
+                          {STATUS.map((s) => (
+                            <option key={s.key} value={s.key}>
+                              {s.label}
+                            </option>
+                          ))}
                         </select>
                       </div>
                     </div>
