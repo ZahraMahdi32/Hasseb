@@ -410,6 +410,114 @@
     font-size: 1.25rem;
     flex-shrink: 0;
 }
+/* Spinner Animation */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.progress-spinner,
+.btn-spinner {
+    animation: spin 1s linear infinite;
+}
+
+/* Progress Message */
+.progress-message {
+    margin-top: 15px;
+    padding: 12px;
+    background-color: #f0f9ff;
+    border: 1px solid #0891b2;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.progress-text {
+    color: #0e7490;
+    font-weight: 500;
+}
+
+/* Error Message */
+.error-message {
+    margin-top: 15px;
+    padding: 12px;
+    background-color: #fef2f2;
+    border: 1px solid #ef4444;
+    border-radius: 6px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.error-icon {
+    color: #dc2626;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.error-content {
+    flex: 1;
+}
+
+.error-title {
+    color: #dc2626;
+    font-weight: 600;
+    margin: 0 0 4px 0;
+}
+
+.error-description {
+    color: #991b1b;
+    margin: 0;
+    font-size: 14px;
+}
+
+/* Success Message */
+.success-message {
+    margin-top: 15px;
+    padding: 12px;
+    background-color: #f0fdf4;
+    border: 1px solid #22c55e;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.success-icon-msg {
+    color: #16a34a;
+}
+
+.success-text {
+    color: #15803d;
+    font-weight: 600;
+}
+
+/* Process Button States */
+.process-btn.processing {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-spinner {
+    margin-right: 8px;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+/* Remove Button Disabled State */
+.remove-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.remove-btn:disabled:hover {
+    background-color: transparent;
+}
 
 @keyframes fadeIn {
     from {

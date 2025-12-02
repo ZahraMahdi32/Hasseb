@@ -17,7 +17,7 @@ router.post("/upload", upload.single("file"), async (req, res) => {
             });
         }
 
-        const { username } = req.body;
+        const { username, parsedData } = req.body;
 
         if (!username) {
             return res.status(400).json({
@@ -26,33 +26,26 @@ router.post("/upload", upload.single("file"), async (req, res) => {
             });
         }
 
-        // Parse Excel file
-        const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
-        const sheetName = workbook.SheetNames[0];
-        const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+        // Parse the JSON string back to object
+        const data = JSON.parse(parsedData);
 
-        if (!sheet || sheet.length === 0) {
-            return res.status(400).json({
-                success: false,
-                msg: "Excel file is empty or improperly formatted"
-            });
-        }
-
-        // Extract data (assuming first row has the data)
-        const row = sheet[0];
+        // Create business data object matching your schema
         const businessData = {
             username,
-            businessName: row["Business Name"] || row.businessName || "My Business",
-            fixedCosts: parseFloat(row["Fixed Costs"] || row.fixedCosts || 0),
-            variableCostPerUnit: parseFloat(row["Variable Cost Per Unit"] || row.variableCostPerUnit || 0),
-            sellingPricePerUnit: parseFloat(row["Selling Price Per Unit"] || row.sellingPricePerUnit || 0)
+            businessName: data.businessName || "My Business",
+            products: data.products || [],
+            fixedCost: data.fixedCost || 0,
+            cashFlow: data.cashFlow || [],
+            pricingScenarios: data.pricingScenarios || [],
+            fileName: req.file.originalname,
+            fileSize: req.file.size
         };
 
         // Validation
-        if (!businessData.fixedCosts || !businessData.variableCostPerUnit || !businessData.sellingPricePerUnit) {
+        if (!businessData.products || businessData.products.length === 0) {
             return res.status(400).json({
                 success: false,
-                msg: "Missing required fields in Excel file"
+                msg: "No products found in the data"
             });
         }
 
