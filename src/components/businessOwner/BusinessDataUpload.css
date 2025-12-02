@@ -367,6 +367,63 @@
 }
 
 /* ========================= */
+/*    ERROR & SUCCESS MSGS   */
+/* ========================= */
+
+/* Error Message */
+.upload-error-message {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    background-color: #fee2e2;
+    border: 1.5px solid #ef4444;
+    border-radius: 12px;
+    color: #991b1b;
+    font-size: 0.95rem;
+    margin-top: 1.5rem;
+    animation: fadeIn 0.3s ease;
+}
+
+.upload-error-message .error-icon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+/* Success Message */
+.upload-success-message {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    background-color: #d1fae5;
+    border: 1.5px solid #10b981;
+    border-radius: 12px;
+    color: #065f46;
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-top: 1.5rem;
+    animation: fadeIn 0.3s ease;
+}
+
+.upload-success-message .success-icon {
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+/* ========================= */
 /*      RESPONSIVE DESIGN    */
 /* ========================= */
 @media (max-width: 768px) {
@@ -399,5 +456,13 @@
 
     .upload-card h2 {
         font-size: 1.25rem;
+    }
+}
+@media (max-width: 768px) {
+    .upload-error-message,
+    .upload-success-message {
+        flex-direction: column;
+        text-align: center;
+        padding: 1rem;
     }
 }
