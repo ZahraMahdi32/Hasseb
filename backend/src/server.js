@@ -1,45 +1,75 @@
-const express = require('express');
-const cors = require('cors');
-const dotenv = require('dotenv');
+// ===============================
+//  IMPORTS
+// ===============================
+const express = require("express");
+const cors = require("cors");
+const dotenv = require("dotenv");
 const connectDB = require("./config/db");
-const userRoutes = require("./routes/userRoutes.js");
+
+// Core user routes
+const userRoutes = require("./routes/userRoutes");
+
+// Business Data (Excel upload + fetch)
 const businessDataRoutes = require("./routes/businessDataRoutes");
 
-dotenv.config();
+// Advisor system routes
+const advisorRoute = require("./routes/advisorRoutes/advisorRoute");
+const advisorTicketRoutes = require("./routes/advisorRoutes/advisorTicketRoutes");
+const ownerAdvisorRoutes = require("./routes/advisorRoutes/ownerAdvisorRoutes");
 
-// Connect to MongoDB
+// Owner routes
+const ownerRoutes = require("./routes/OwnerRoutes");
+
+// ===============================
+//  CONFIG
+// ===============================
+dotenv.config();
 connectDB();
 
 const app = express();
-
-/* -----------------------------
-   MIDDLEWARE
------------------------------- */
 app.use(cors());
 app.use(express.json());
 
-/* -----------------------------
-   ROOT MESSAGE
------------------------------- */
-app.get('/', (req, res) => {
-    res.send('HASEEB BACKEND is running 🚀');
+// ===============================
+//  ROOT
+// ===============================
+app.get("/", (req, res) => {
+  res.send("HASEEB BACKEND is running 🚀");
 });
 
-/* -----------------------------
-   USER ROUTES
------------------------------- */
+// ===============================
+//  USER ROUTES
+// ===============================
 app.use("/api/users", userRoutes);
 
-/* -----------------------------
-   BusinessData ROUTES
------------------------------- */
+// ===============================
+//  BUSINESS DATA ROUTES
+// (Excel upload & data processing)
+// ===============================
 app.use("/api/business-data", businessDataRoutes);
-/* -----------------------------
-   START SERVER
------------------------------- */
-const PORT = process.env.PORT || 5001;
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
 
-// to check if it work  http://localhost:5001/
+// ===============================
+//  ADVISOR ROUTES
+// ===============================
+app.use("/api/advisor", advisorRoute);
+
+// Advisor ticket system
+app.use("/api/advisor", advisorTicketRoutes);
+
+// Owner ↔ Advisor linking
+app.use("/api/link", ownerAdvisorRoutes);
+
+// ===============================
+//  OWNER ROUTES
+// ===============================
+app.use("/api/owner", ownerRoutes);
+
+// ===============================
+//  START SERVER
+// ===============================
+const PORT = process.env.PORT || 5001;
+
+app.listen(PORT, () => {
+  console.log(`🚀 Server is running on port ${PORT}`);
+  console.log(`🌐 Visit: http://localhost:${PORT}/`);
+});
