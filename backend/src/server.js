@@ -3,6 +3,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const connectDB = require("./config/db");
 const userRoutes = require("./routes/userRoutes.js");
+const businessDataRoutes = require("./routes/businessDataRoutes");
 
 dotenv.config();
 
@@ -29,6 +30,10 @@ app.get('/', (req, res) => {
 ------------------------------ */
 app.use("/api/users", userRoutes);
 
+/* -----------------------------
+   BusinessData ROUTES
+------------------------------ */
+app.use("/api/business-data", businessDataRoutes);
 /* -----------------------------
    START SERVER
 ------------------------------ */
