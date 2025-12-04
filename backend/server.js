@@ -8,10 +8,6 @@ const express = require("express");
 const cors = require("cors");
 const connectDB = require("./src/config/db");
 
-// Debug logs to verify env loaded
-console.log("EMAIL_USER:", process.env.EMAIL_USER);
-console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "Loaded" : "MISSING");
-
 // Core user routes
 const userRoutes = require("./src/routes/userRoutes");
 

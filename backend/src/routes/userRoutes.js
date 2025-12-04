@@ -6,14 +6,14 @@ const Advisor = require("../models/advisorModels/advisor");
 const Owner = require("../models/Owner");
 const bcrypt = require("bcryptjs");
 const { sendWelcomeEmail } = require("../utils/email");
-
+const {sendPasswordChangedEmail} = require('../utils/email')
 // Password strength regex
 const strongPasswordRegex =
   /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
 
 // Generate unique username
 function generateUsername(role, fullName, year) {
-  const clean = fullName.replace(/\s+/g, "").toLowerCase();
+  const clean = fullName.split(" ")[0].toLowerCase();
   const random = Math.floor(10000 + Math.random() * 90000);
   return `${role}.${clean}.${year}${random}`;
 }
@@ -22,7 +22,7 @@ function generateUsername(role, fullName, year) {
       SIGNUP
 =========================== */
 router.post("/signup", async (req, res) => {
-  
+
   try {
     const { fullName, email, password, role } = req.body;
 
@@ -161,6 +161,68 @@ router.post("/login", async (req, res) => {
   } catch (err) {
     console.error("Login error:", err);
     return res.status(500).json({ msg: "Server crashed", error: err.message });
+  }
+});
+
+/* ===========================
+      FORGOT PASSWORD - VERIFY
+=========================== */
+router.post("/forgot-password/verify", async (req, res) => {
+  try {
+    const { email, username } = req.body;
+
+    if (!email || !username)
+      return res.status(400).json({ msg: "Missing email or username" });
+
+    const user = await User.findOne({ email, username });
+
+    if (!user)
+      return res.status(400).json({ msg: "Email and username do not match any account" });
+
+    return res.json({ msg: "Verified", userId: user._id });
+
+  } catch (err) {
+    console.error("Forgot-password verify error:", err);
+    res.status(500).json({ msg: "Server error" });
+  }
+});
+
+/* ===========================
+      FORGOT PASSWORD - RESET
+=========================== */
+router.post("/forgot-password/reset", async (req, res) => {
+  try {
+    const { userId, newPassword } = req.body;
+
+    if (!userId || !newPassword)
+      return res.status(400).json({ msg: "Missing fields" });
+
+    // Strong password validation (same as signup)
+    const strongPasswordRegex =
+      /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
+
+    if (!strongPasswordRegex.test(newPassword))
+      return res.status(400).json({
+        msg: "Weak password — must contain uppercase, lowercase, number, and symbol"
+      });
+
+    // Find user
+    const user = await User.findById(userId);
+    if (!user)
+      return res.status(400).json({ msg: "Invalid user" });
+
+    // Update password — hashing happens automatically in your model
+    user.password = newPassword;
+    await user.save();
+    
+    // ⭐ Send password changed email
+    await sendPasswordChangedEmail(user.email, user.fullName);
+    
+    return res.json({ msg: "Password updated successfully" });
+
+  } catch (err) {
+    console.error("Forgot-password reset error:", err);
+    res.status(500).json({ msg: "Server error" });
   }
 });
 

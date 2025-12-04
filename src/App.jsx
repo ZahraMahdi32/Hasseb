@@ -6,13 +6,15 @@ import HaseebAuth from "./components/Home/Haseebauth.jsx";
 import Manger from "./Manger.jsx";
 import Advisor from "./Advisor.jsx";
 import OwnerHome from "./components/businessOwner/BusinessOwnerHome.jsx";
+import ForgotPassword from "./components/Home/ForgotPasswordPage.jsx";
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Login / Landing */}
+        {/* Login / Landing / ForgetPassword */}
         <Route path="/" element={<HaseebHomePage />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
         {/* Role-based dashboards */}
         <Route path="/manager" element={<Manger />} />

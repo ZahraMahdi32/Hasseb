@@ -304,7 +304,13 @@ export default function HaseebAuth() {
                                         <input type="checkbox" />
                                         <span>Remember me</span>
                                     </label>
-                                    <a href="#" className="forgot-link">Forgot password?</a>
+                                    <span 
+                                        className="forgot-link" 
+                                        onClick={() => navigate("/forgot-password")}
+                                        style={{ cursor: "pointer" }}
+                                    >
+                                          Forgot password?
+                                    </span>
                                 </div>
                             )}
 

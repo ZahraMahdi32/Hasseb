@@ -18,8 +18,7 @@ async function sendWelcomeEmail(to, fullName, username) {
             from: `"HASEEB App" <${process.env.EMAIL_USER}>`,
             to,
             subject: "Welcome to HASEEB!",
-            text: `Subject: Welcome to HASEEB!
-
+            text: `
 Hello ${fullName},  
 
 Welcome to HASEEB — we’re excited to have you on board! 🎉  
@@ -44,4 +43,25 @@ The HASEEB Team
     }
 }
 
-module.exports = { sendWelcomeEmail };
+async function sendPasswordChangedEmail(to, fullName) {
+  try {
+    await transporter.sendMail({
+      from: `"HASEEB App" <${process.env.EMAIL_USER}>`,
+      to,
+      subject: "Your HASEEB Password Has Been Updated",
+      text: `
+Hello ${fullName},
+
+Your HASEEB account password was successfully updated.
+
+If you did not perform this action, contact support immediately.
+
+Stay secure,
+HASEEB Team`
+    });
+  } catch (err) {
+    console.error("❌ Failed to send password-changed email:", err);
+  }
+}
+
+module.exports = { sendWelcomeEmail, sendPasswordChangedEmail };
