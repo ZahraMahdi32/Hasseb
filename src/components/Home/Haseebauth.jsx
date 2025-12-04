@@ -18,6 +18,8 @@ export default function HaseebAuth() {
     const [isLogin, setIsLogin] = useState(true);
     const [showPassword, setShowPassword] = useState(false);
     const [selectedRole, setSelectedRole] = useState('');
+    const [strength, setStrength] = useState(0);
+
     const [formData, setFormData] = useState({
         email: '',
         username: '',
@@ -28,6 +30,22 @@ export default function HaseebAuth() {
     });
 
     const navigate = useNavigate();
+
+    /* ===========================
+         PASSWORD STRENGTH LOGIC
+       =========================== */
+    const calculateStrength = (password) => {
+        let score = 0;
+        if (password.length >= 8) score++;
+        if (/[A-Z]/.test(password)) score++;
+        if (/[a-z]/.test(password)) score++;
+        if (/\d/.test(password)) score++;
+        if (/[@$!%*?&]/.test(password)) score++;
+        return score;
+    };
+
+    const strengthLabel = ["Very Weak", "Weak", "Fair", "Strong", "Very Strong"];
+    const strengthColors = ["#ff4d4d", "#ff944d", "#ffcc00", "#66cc66", "#009933"];
 
     /* ROLES */
     const userRoles = [
@@ -51,7 +69,12 @@ export default function HaseebAuth() {
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
+
         setFormData(prev => ({ ...prev, [name]: value }));
+
+        if (!isLogin && name === "password") {
+            setStrength(calculateStrength(value));
+        }
     };
 
     const handleRoleSelect = (roleId) => {
@@ -75,7 +98,6 @@ export default function HaseebAuth() {
         e.preventDefault();
 
         if (isLogin) {
-            /* LOGIN WITH USERNAME + PASSWORD */
             const res = await fetch("http://localhost:5001/api/users/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -107,6 +129,13 @@ export default function HaseebAuth() {
         if (formData.password !== formData.confirmPassword)
             return alert("Passwords do not match.");
 
+        /* Frontend password strength enforcement */
+        if (strength < 4) {
+            return alert(
+                "Password must be at least 8 characters and include:\n- Uppercase letter\n- Lowercase letter\n- Number\n- Symbol (@$!%*?&)"
+            );
+        }
+
         const res = await fetch("http://localhost:5001/api/users/signup", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -136,6 +165,7 @@ export default function HaseebAuth() {
             fullName: '',
             role: ''
         });
+        setStrength(0);
     };
 
     return (
@@ -201,6 +231,7 @@ export default function HaseebAuth() {
                         )}
 
                         <form onSubmit={handleSubmit} className="auth-form">
+                            
                             {!isLogin && (
                                 <div className="form-group">
                                     <label className="form-label">Full Name</label>
@@ -219,7 +250,6 @@ export default function HaseebAuth() {
                                 </div>
                             )}
 
-                            {/* EMAIL ONLY IN SIGNUP */}
                             {!isLogin && (
                                 <div className="form-group">
                                     <label className="form-label">Email Address</label>
@@ -238,7 +268,6 @@ export default function HaseebAuth() {
                                 </div>
                             )}
 
-                            {/* USERNAME ONLY IN LOGIN */}
                             {isLogin && (
                                 <div className="form-group">
                                     <label className="form-label">Username</label>
@@ -257,8 +286,10 @@ export default function HaseebAuth() {
                                 </div>
                             )}
 
+                            {/* ⭐ ENHANCED PASSWORD FIELD */}
                             <div className="form-group">
                                 <label className="form-label">Password</label>
+
                                 <div className="input-wrapper">
                                     <Lock className="input-icon" />
                                     <input
@@ -278,8 +309,35 @@ export default function HaseebAuth() {
                                         {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                                     </button>
                                 </div>
+
+                                {/* Strength meter displayed ONLY in signup */}
+                                {!isLogin && formData.password.length > 0 && (
+                                    <div style={{ marginTop: "8px" }}>
+                                        <div
+                                            style={{
+                                                height: "6px",
+                                                borderRadius: "4px",
+                                                backgroundColor: strengthColors[strength - 1] || "#ddd",
+                                                width: `${(strength / 5) * 100}%`,
+                                                transition: "all 0.3s ease"
+                                            }}
+                                        ></div>
+
+                                        <p
+                                            style={{
+                                                marginTop: "4px",
+                                                fontSize: "0.85rem",
+                                                fontWeight: "500",
+                                                color: strengthColors[strength - 1] || "#999"
+                                            }}
+                                        >
+                                            {strengthLabel[strength - 1] || "Too Short"}
+                                        </p>
+                                    </div>
+                                )}
                             </div>
 
+                            {/* CONFIRM PASSWORD */}
                             {!isLogin && (
                                 <div className="form-group">
                                     <label className="form-label">Confirm Password</label>
@@ -330,10 +388,11 @@ export default function HaseebAuth() {
                         </form>
 
                         <p className="auth-terms">
-                            By continuing, you agree to HASEEB's
+                            By continuing, you agree to HASEEB's 
                             <a href="#"> Terms of Service</a> and
                             <a href="#"> Privacy Policy</a>
                         </p>
+
                     </div>
                 </div>
             </div>

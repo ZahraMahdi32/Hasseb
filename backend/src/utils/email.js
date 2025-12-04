@@ -34,9 +34,8 @@ If you ever need help, feel free to reach out.
 Thank you for joining the HASEEB community!
 
 Warm regards,  
-The HASEEB Team  
 
-            `
+HASEEB Team.`
         });
     } catch (err) {
         console.error("❌ Email sending failed:", err);
@@ -57,7 +56,8 @@ Your HASEEB account password was successfully updated.
 If you did not perform this action, contact support immediately.
 
 Stay secure,
-HASEEB Team`
+
+HASEEB Team.`
     });
   } catch (err) {
     console.error("❌ Failed to send password-changed email:", err);
