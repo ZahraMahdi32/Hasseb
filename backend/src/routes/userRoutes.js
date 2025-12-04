@@ -5,6 +5,7 @@ const User = require("../models/User");
 const Advisor = require("../models/advisorModels/advisor");
 const Owner = require("../models/Owner");
 const bcrypt = require("bcryptjs");
+const { sendWelcomeEmail } = require("../utils/email");
 
 // Password strength regex
 const strongPasswordRegex =
@@ -21,6 +22,7 @@ function generateUsername(role, fullName, year) {
       SIGNUP
 =========================== */
 router.post("/signup", async (req, res) => {
+  
   try {
     const { fullName, email, password, role } = req.body;
 
@@ -37,7 +39,6 @@ router.post("/signup", async (req, res) => {
     const year = new Date().getFullYear();
     const username = generateUsername(role, fullName, year);
 
-    // Create user in Users collection
     const newUser = new User({
       fullName,
       email,
@@ -47,14 +48,14 @@ router.post("/signup", async (req, res) => {
       joinedYear: year
     });
 
-    await newUser.save(); // password hashing happens automatically
+    await newUser.save();
+
+    // ⭐ SEND WELCOME EMAIL HERE
+    await sendWelcomeEmail(newUser.email, newUser.fullName, newUser.username);
 
     let advisorRecord = null;
     let ownerRecord = null;
 
-    /* ===========================
-        If Advisor → create profile
-    ============================ */
     if (role === "advisor") {
       advisorRecord = await Advisor.create({
         _id: newUser._id,
@@ -91,9 +92,6 @@ router.post("/signup", async (req, res) => {
       });
     }
 
-    /* ===========================
-        If Owner → create profile
-    ============================ */
     if (role === "owner") {
       ownerRecord = await Owner.create({
         _id: newUser._id,

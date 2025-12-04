@@ -1,29 +1,34 @@
 // ===============================
 //  IMPORTS
 // ===============================
+// Load environment variables from backend/.env
+require("dotenv").config({ path: __dirname + "/.env" });
+
 const express = require("express");
 const cors = require("cors");
-const dotenv = require("dotenv");
-const connectDB = require("./config/db");
+const connectDB = require("./src/config/db");
+
+// Debug logs to verify env loaded
+console.log("EMAIL_USER:", process.env.EMAIL_USER);
+console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "Loaded" : "MISSING");
 
 // Core user routes
-const userRoutes = require("./routes/userRoutes");
+const userRoutes = require("./src/routes/userRoutes");
 
 // Business Data (Excel upload + fetch)
-const businessDataRoutes = require("./routes/businessDataRoutes");
+const businessDataRoutes = require("./src/routes/businessDataRoutes");
 
 // Advisor system routes
-const advisorRoute = require("./routes/advisorRoutes/advisorRoute");
-const advisorTicketRoutes = require("./routes/advisorRoutes/advisorTicketRoutes");
-const ownerAdvisorRoutes = require("./routes/advisorRoutes/ownerAdvisorRoutes");
+const advisorRoute = require("./src/routes/advisorRoutes/advisorRoute");
+const advisorTicketRoutes = require("./src/routes/advisorRoutes/advisorTicketRoutes");
+const ownerAdvisorRoutes = require("./src/routes/advisorRoutes/ownerAdvisorRoutes");
 
 // Owner routes
-const ownerRoutes = require("./routes/OwnerRoutes");
+const ownerRoutes = require("./src/routes/OwnerRoutes");
 
 // ===============================
 //  CONFIG
 // ===============================
-dotenv.config();
 connectDB();
 
 const app = express();
@@ -44,7 +49,6 @@ app.use("/api/users", userRoutes);
 
 // ===============================
 //  BUSINESS DATA ROUTES
-// (Excel upload & data processing)
 // ===============================
 app.use("/api/business-data", businessDataRoutes);
 
@@ -52,8 +56,6 @@ app.use("/api/business-data", businessDataRoutes);
 //  ADVISOR ROUTES
 // ===============================
 app.use("/api/advisor", advisorRoute);
-
-// Advisor ticket system
 app.use("/api/advisor", advisorTicketRoutes);
 
 // Owner ↔ Advisor linking

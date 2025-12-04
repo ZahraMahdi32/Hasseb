@@ -76,7 +76,7 @@ export default function HaseebAuth() {
 
         if (isLogin) {
             /* LOGIN WITH USERNAME + PASSWORD */
-            const res = await fetch("/api/users/login", {
+            const res = await fetch("http://localhost:5001/api/users/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -107,7 +107,7 @@ export default function HaseebAuth() {
         if (formData.password !== formData.confirmPassword)
             return alert("Passwords do not match.");
 
-        const res = await fetch("/api/users/signup", {
+        const res = await fetch("http://localhost:5001/api/users/signup", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(formData)
