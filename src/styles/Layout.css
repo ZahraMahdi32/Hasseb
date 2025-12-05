@@ -1,0 +1,343 @@
+/* ================================
+              LAYOUT
+================================ */
+
+/* ================================
+   NAVBAR / TOPBAR
+================================ */
+
+.navbar {
+    background: #ffffff !important;
+    border-bottom: 1px solid #e5e7eb !important;
+    padding: 14px 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.04);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.navbar-brand {
+    font-weight: 700;
+    font-size: 18px;
+    color: #082830 !important;
+    text-decoration: none;
+}
+
+.navbar .btn,
+.navbar button {
+    font-weight: 600;
+    border-radius: 10px;
+    padding: 10px 18px;
+    transition: all 0.2s ease;
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    color: #6b7280;
+}
+
+.navbar .btn:hover,
+.navbar button:hover {
+    background: #f9fafb !important;
+    color: #14748A !important;
+    transform: translateY(-1px);
+    border-color: #14748A;
+}
+
+.navbar .btn-primary {
+    background: linear-gradient(135deg, #1AC6C6 0%, #14748A 100%) !important;
+    color: #ffffff !important;
+    border: none;
+    box-shadow: 0 4px 12px rgba(26,198,198,.25);
+}
+
+.navbar .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(26,198,198,.35);
+}
+
+/* Navbar search */
+.navbar .form-control {
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    padding: 8px 14px;
+    font-size: 14px;
+}
+
+.navbar .form-control:focus {
+    border-color: #1AC6C6 !important;
+    box-shadow: 0 0 0 3px rgba(26,198,198,.1);
+}
+
+/* ================================
+   SIDEBAR
+================================ */
+
+.sidebar-neo {
+    width: 280px !important;
+    background: #ffffff !important;
+    color: #082830 !important;
+    border-right: 1px solid #e5e7eb !important;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 2px 12px rgba(0,0,0,.06);
+}
+
+/* Brand */
+.sidebar-neo__brand {
+    background: #ffffff !important;
+    border-bottom: 1px solid #f3f4f6 !important;
+    padding: 24px 20px;
+}
+
+.sidebar-logo-img {
+    width: 230px;
+    height: 90px;
+    object-fit: contain;
+    margin: 0 auto;
+    display: block;
+}
+
+/* Navigation */
+.sidebar-neo__nav {
+    padding: 20px 16px;
+    flex: 1;
+    overflow-y: auto;
+}
+
+/* Sidebar Items */
+.sidebar-neo__item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 14px;
+    width: 100%;
+    padding: 13px 18px;
+    margin-bottom: 6px;
+    border-radius: 14px;
+    background: transparent !important;
+    color: #6b7280 !important;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    border-left: 3px solid transparent;
+    text-decoration: none;
+}
+
+.sidebar-neo__icon {
+    width: 22px !important;
+    height: 22px !important;
+    min-width: 22px !important;
+    min-height: 22px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.sidebar-neo__icon svg {
+    width: 22px !important;
+    height: 22px !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Hover */
+.sidebar-neo__item:hover {
+    background: #f9fafb !important;
+    color: #14748A !important;
+    transform: translateX(2px);
+}
+
+.sidebar-neo__item:hover .sidebar-neo__icon,
+.sidebar-neo__item:hover .sidebar-neo__icon svg {
+    color: #14748A !important;
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Active - Only left border */
+.sidebar-neo__item.is-active {
+    background: transparent !important;
+    color: #1AC6C6 !important;
+    border-left: 3px solid #1AC6C6 !important;
+    font-weight: 700;
+    box-shadow: none !important;
+    border-radius: 0 14px 14px 0 !important;
+}
+
+.sidebar-neo__item.is-active .sidebar-neo__icon,
+.sidebar-neo__item.is-active .sidebar-neo__icon svg {
+    color: #1AC6C6 !important;
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Green dot */
+.sidebar-neo__dot {
+    margin-left: auto;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #0ACF83;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(10,207,131,.7); }
+    50% { box-shadow: 0 0 0 6px rgba(10,207,131,0); }
+}
+
+/* Bottom Dock */
+.sidebar-neo__dock {
+    background: #fafafa !important;
+    border-top: 1px solid #f3f4f6 !important;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.sidebar-neo__dock-btn {
+    width: 40px;
+    height: 40px;
+    background: transparent !important;
+    color: #14748A !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none !important;
+    border-radius: 10px;
+}
+
+.sidebar-neo__dock-btn:hover {
+    background: #f3f4f6 !important;
+    transform: scale(1.1);
+    color: #1AC6C6 !important;
+}
+
+/* Help Text */
+.sidebar-neo__help-text {
+    font-size: 12px;
+    color: #9ca3af !important;
+    padding: 16px 20px 10px;
+    font-weight: 500;
+}
+
+.sidebar-neo__logout:hover {
+    background: rgba(255,87,87,.1) !important;
+    transform: translateX(3px) !important;
+}
+
+/* Scrollbar */
+.sidebar-neo::-webkit-scrollbar {
+    width: 5px;
+}
+.sidebar-neo::-webkit-scrollbar-thumb {
+    background: rgba(20,116,138,.2);
+    border-radius: 10px;
+}
+.sidebar-neo::-webkit-scrollbar-thumb:hover {
+    background: rgba(20,116,138,.4);
+}
+
+/* ================================
+   DARK THEME
+================================ */
+
+body[data-theme="dark"] .sidebar-neo {
+    background: #082830 !important;
+    border-color: #14748A !important;
+    box-shadow: 0 2px 12px rgba(0,0,0,.3);
+}
+
+body[data-theme="dark"] .sidebar-neo__brand {
+    background: #082830 !important;
+    border-bottom: 1px solid #14748A !important;
+}
+
+body[data-theme="dark"] .sidebar-neo__item {
+    color: #9ca3af !important;
+}
+
+body[data-theme="dark"] .sidebar-neo__item:hover {
+    background: rgba(26,198,198,.1) !important;
+    color: #1AC6C6 !important;
+}
+
+body[data-theme="dark"] .sidebar-neo__item:hover .sidebar-neo__icon svg {
+    color: #1AC6C6 !important;
+}
+
+body[data-theme="dark"] .sidebar-neo__item.is-active {
+    color: #1AC6C6 !important;
+}
+
+body[data-theme="dark"] .sidebar-neo__dock {
+    background: #0a3540 !important;
+    border-top: 1px solid #14748A !important;
+}
+
+body[data-theme="dark"] .sidebar-neo__dock-btn {
+    color: #9ca3af !important;
+}
+
+body[data-theme="dark"] .sidebar-neo__dock-btn:hover {
+    background: rgba(26,198,198,.15) !important;
+    color: #1AC6C6 !important;
+}
+
+body[data-theme="dark"] .sidebar-neo__logout {
+    color: #FF5757 !important;
+}
+
+body[data-theme="dark"] .sidebar-neo__logout:hover {
+    background: rgba(255,87,87,.15) !important;
+}
+
+/* Dark theme navbar */
+body[data-theme="dark"] .navbar {
+    background: #082830 !important;
+    border-color: #14748A !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,.3);
+}
+
+body[data-theme="dark"] .navbar-brand {
+    color: #ffffff !important;
+}
+
+body[data-theme="dark"] .navbar .btn,
+body[data-theme="dark"] .navbar button {
+    background: #0a3540 !important;
+    border-color: #14748A !important;
+    color: #9ca3af !important;
+}
+
+body[data-theme="dark"] .navbar .btn:hover,
+body[data-theme="dark"] .navbar button:hover {
+    background: rgba(26,198,198,.15) !important;
+    color: #1AC6C6 !important;
+    border-color: #1AC6C6 !important;
+}
+
+body[data-theme="dark"] .navbar .form-control {
+    background: #0a3540 !important;
+    border-color: #14748A !important;
+    color: #ffffff !important;
+}
+
+body[data-theme="dark"] .navbar .form-control:focus {
+    border-color: #1AC6C6 !important;
+    box-shadow: 0 0 0 3px rgba(26,198,198,.2);
+}
+
+body[data-theme="dark"] .navbar .form-control::placeholder {
+    color: #6b7280 !important;
+}

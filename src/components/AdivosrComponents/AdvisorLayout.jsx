@@ -1,6 +1,5 @@
 import React from "react";
-import { 
-  FiTrendingUp,
+import {
   FiHome,
   FiMessageCircle,
   FiBarChart2,
@@ -8,6 +7,8 @@ import {
   FiBell,
   FiHelpCircle
 } from "react-icons/fi";
+import "../../styles/Layout.css"
+
 /* ============================
         HEADER
 =============================== */
@@ -36,8 +37,6 @@ export function Header({ theme, onOpenMenu }) {
     </nav>
   );
 }
-
-
 /* ============================
         SIDEBAR
 =============================== */
@@ -72,9 +71,6 @@ export function Sidebar({ tab, setTab, isOpen, onClose, onLogout }) {
               alt="Haseeb Logo"
               className="sidebar-logo-img"
             />
-            <div className="sidebar-neo__logo">
-              <FiTrendingUp size={20} color="#fff" />
-            </div>
           </div>
         </div>
 
