@@ -10,6 +10,12 @@ const OwnerSchema = new mongoose.Schema({
     ref: "Advisor",
     default: null
   },
+  businessData: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "BusinessData",
+    default: null
+  },
+
 
   /* ============================
      FINANCIAL FIELDS

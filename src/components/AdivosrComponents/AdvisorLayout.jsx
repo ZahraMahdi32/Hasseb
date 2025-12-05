@@ -6,8 +6,10 @@ import {
   FiBarChart2,
   FiUser,
   FiBell,
-  FiHelpCircle
+  FiHelpCircle,
+  FiStar
 } from "react-icons/fi";
+
 /* ============================
         HEADER
 =============================== */
@@ -16,8 +18,7 @@ export function Header({ theme, onOpenMenu }) {
     if (theme === "system") {
       const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
       document.body.setAttribute("data-theme", prefersDark ? "dark" : "light");
-    } 
-    else {
+    } else {
       document.body.setAttribute("data-theme", theme);
     }
   }, [theme]);
@@ -37,7 +38,6 @@ export function Header({ theme, onOpenMenu }) {
   );
 }
 
-
 /* ============================
         SIDEBAR
 =============================== */
@@ -47,6 +47,7 @@ export function Sidebar({ tab, setTab, isOpen, onClose, onLogout }) {
     { id: "dashboard", label: "Dashboard", icon: <FiHome /> },
     { id: "feedback", label: "Feedback", icon: <FiMessageCircle /> },
     { id: "analyzer", label: "Analyzer", icon: <FiBarChart2 /> },
+    { id: "recommendations", label: "Recommendations", icon: <FiStar /> },   // ⭐ NEW TAB
   ];
 
   return (

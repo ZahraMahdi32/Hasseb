@@ -1,4 +1,5 @@
 import React from "react";
+import axios from "axios";
 import { generateDashboardInsights } from "./InsightEngine";
 import "./OwnerDashboardPanel.css"; 
 
@@ -18,12 +19,14 @@ export default function Dashboard({ baseData }) {
         const rows = [];
 
         rows.push(["Metric", "Value"]);
-
         rows.push(["Health Score", healthScore]);
         rows.push(["Real Burn Rate", cashInsights.realBurnRate]);
 
         bepInsights.forEach((b) => {
-            rows.push([`BEP - ${b.product}`, b.issue ? "Not profitable" : `${b.breakEvenUnits} units`]);
+            rows.push([
+                `BEP - ${b.product}`,
+                b.issue ? "Not profitable" : `${b.breakEvenUnits} units`
+            ]);
         });
 
         pricingInsights.forEach((p) => {
@@ -45,11 +48,40 @@ export default function Dashboard({ baseData }) {
     }
 
     // -------------------------
-    // SHARE (mock)
+    // REAL SHARE WITH ADVISOR
     // -------------------------
-    function handleShareAdvisor() {
-        alert("Shared with advisor! (UI only — no backend yet)");
-    }
+    const handleShareAdvisor = async () => {
+        try {
+            const owner = JSON.parse(localStorage.getItem("loggedUser"));
+            const ownerId = owner?.ownerId;
+            const advisorId = owner?.advisorId;
+
+            if (!ownerId) {
+                alert("Owner information missing.");
+                return;
+            }
+
+            if (!advisorId) {
+                alert("No advisor assigned to your account.");
+                return;
+            }
+
+            const res = await axios.post("http://localhost:5001/api/owner/share", {
+                ownerId,
+                advisorId
+            });
+
+            if (res.data.success) {
+                alert("Your business data has been shared with your advisor!");
+            } else {
+                alert("Something went wrong. Could not share data.");
+            }
+
+        } catch (err) {
+            console.error(err);
+            alert("Error sharing data with advisor.");
+        }
+    };
 
     return (
         <div className="dashboard-container">

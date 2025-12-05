@@ -1,79 +1,58 @@
-// backend/src/models/BusinessData.js
 const mongoose = require("mongoose");
 
-const BusinessDataSchema = new mongoose.Schema({
-    username: {
-        type: String,
-        required: true,
-        unique: true,  // One business data per owner
-        ref: "User"
-    },
-    businessName: {
-        type: String,
-        required: true
+const BusinessDataSchema = new mongoose.Schema(
+  {
+    // 📌 ربط مباشر بصاحب البيانات
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Owner",
+      required: true
     },
 
-    // Sheet[1]: Contribution Margin
-    // Products
+    // اختياري: عشان تربطينه بسهولة من الـ username
+    username: { type: String },
+
+    businessName: { type: String, default: "My Business" },
+
+    // منتجات
     products: [
-        {
-            id: String,
-            name: String,                // Item
-            category: String,            // Value (Premium/Standard)
-            pricePerUnit: Number,        // Price
-            variableCostPerUnit: Number, // Variable Cost
-            contributionMargin: Number,  // CM
-            breakEvenUnits: Number,      // Break-Even Units
-            breakEvenRevenue: Number     // Break-Even SAR
-        }
+      {
+        name: String,
+        cost: Number,
+        price: Number
+      }
     ],
 
-    // Fixed costs
-    fixedCost: {
-        type: Number,
-        required: true
-    },
+    // تكاليف ثابتة
+    fixedCost: { type: Number, default: 0 },
 
-    // Sheet[2]: Cash Flow
+    // كاش فلو
     cashFlow: [
-        {
-            date: String,              // Date
-            description: String,       // Description
-            cashIn: Number,            // Cash In
-            cashOut: Number,           // Cash Out
-            netCashFlow: Number,       // Net Cash Flow
-            runningBalance: Number     // Running Balance
-        }
+      {
+        month: String,
+        revenue: Number,
+        expenses: Number,
+        netCashFlow: Number
+      }
     ],
 
-    // Sheet[3]: Pricing Sensitivity
-    // Pricing scenarios
+    // سيناريوهات التسعير
     pricingScenarios: [
-        {
-            scenario: String,          // Scenario
-            price: Number,             // Price
-            unitsSold: Number,         // Units Sold
-            revenue: Number,           // Revenue
-            variableCost: Number,      // Variable Cost
-            contributionMargin: Number, // CM
-            profit: Number             // Profit
-        }
+      {
+        scenario: String,   // مثل "Base" / "High Price" / "Low Price"
+        price: Number,
+        units: Number,
+        revenue: Number,
+        variableCost: Number,
+        cm: Number,
+        profit: Number
+      }
     ],
 
-    // File metadata
-    fileName: {
-        type: String,
-        required: true
-    },
-
-    fileSize: Number,
-    uploadedAt: {
-        type: Date,
-        default: Date.now
-    },
-
-    // Store the raw file path
-    filePath: String
-});
+    fileName: String,
+    fileSize: Number
+  },
+  { timestamps: true }
+);
 
 module.exports = mongoose.model("BusinessData", BusinessDataSchema);

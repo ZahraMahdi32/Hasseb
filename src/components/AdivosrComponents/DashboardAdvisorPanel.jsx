@@ -1,154 +1,131 @@
-// src/components/AdivosrComponents/DashboardAdvisorPanel.jsx
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import AnalyzerPanel from "./AnalyzerPanel.jsx";
 
-import React from "react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer
-} from "recharts";
-import { FiClock } from "react-icons/fi";
+export default function DashboardAdvisorPanel({ advisorId }) {
+  const [owners, setOwners] = useState([]);
+  const [selectedOwner, setSelectedOwner] = useState(null);
+  const [ownerData, setOwnerData] = useState(null);
 
-export default function DashboardAdvisorPanel({
-  advisor,
-  owners = [],
-  tickets = [],
-  activity = [],
-  alerts = [],
-  riskAlerts = [], // ← بيانات الريسك من الباكند
-  setTab,
-  setSelectedClient,
-  setSelectedRisk,
-}) {
+  const [recommendationText, setRecommendationText] = useState("");
+
+  useEffect(() => {
+    fetchDashboard();
+  }, []);
+
+  const fetchDashboard = async () => {
+    try {
+      const res = await axios.get(
+        `http://localhost:5001/api/advisor/dashboard/${advisorId}`
+      );
+      setOwners(res.data.owners || []);
+    } catch (err) {
+      console.error("Dashboard load error:", err);
+    }
+  };
+
+  const handleSelectOwner = (owner) => {
+    setSelectedOwner(owner);
+    setOwnerData(owner.businessData || null);
+  };
+
+  const submitRecommendation = async () => {
+    if (!recommendationText.trim() || !selectedOwner) return;
+
+    try {
+      await axios.post("http://localhost:5001/api/advisor/suggestions", {
+        advisorId,
+        ownerId: selectedOwner._id,
+        suggestion: { text: recommendationText },
+      });
+
+      alert("Recommendation sent!");
+      setRecommendationText("");
+    } catch (err) {
+      console.error("Error sending recommendation:", err);
+    }
+  };
+
   return (
-    <div className="container-xxl">
+    <div className="p-5">
 
-      {/* =========================================
-             CLIENTS WITH ACTIVE SIMULATIONS
-      ========================================= */}
-      <div className="card-neo p-4 mb-4">
-        <h4 className="fw-bold mb-3">Clients with Active Simulations</h4>
+      {/* LEFT SIDE — Owners List */}
+      <div className="flex gap-6">
+        <div className="w-1/3 bg-white shadow p-4 rounded-xl">
+          <h2 className="text-xl font-semibold mb-3">Your Owners</h2>
 
-        <div className="d-flex flex-column gap-3">
-          {owners.slice(0, 2).map((o) => (
+          {owners.map((owner) => (
             <div
-              key={o._id}
-              className="d-flex justify-content-between p-3 rounded-3 card-neo"
-              style={{ cursor: "pointer" }}
-              onClick={() => {
-                setSelectedClient(o);
-                setTab("simulation_details");
-              }}
+              key={owner._id}
+              onClick={() => handleSelectOwner(owner)}
+              className={`p-3 border rounded-lg mb-2 cursor-pointer ${
+                selectedOwner?._id === owner._id
+                  ? "bg-blue-100 border-blue-500"
+                  : "bg-gray-50"
+              }`}
             >
-              <div className="fw-semibold">{o.businessName || o.fullName}</div>
-              <div className="text-muted small">Break-even Simulation</div>
-              <div className="text-muted small">Updated recently</div>
+              <p className="font-bold">{owner.fullName}</p>
+              <p className="text-gray-500">{owner.username}</p>
             </div>
           ))}
         </div>
-      </div>
 
-      {/* =========================================
-                 RISK ALERTS (FROM BACKEND)
-      ========================================= */}
-      <div className="card-neo p-4 mb-4">
-        <h4 className="fw-bold">Risk Alerts</h4>
-        <div className="text-muted mb-3">Important insights from your clients</div>
+        {/* RIGHT SIDE — Owner Data + Analyzer */}
+        <div className="w-2/3">
+          {!selectedOwner ? (
+            <div className="text-gray-600 text-center mt-20">
+              Select an owner to view details.
+            </div>
+          ) : (
+            <div>
+              <h2 className="text-2xl font-bold mb-2">
+                {selectedOwner.fullName} — Business Overview
+              </h2>
 
-        {(!riskAlerts || riskAlerts.length === 0) && (
-          <div className="text-muted">No risk alerts available</div>
-        )}
+              {/* BUSINESS DATA DISPLAY */}
+              {!ownerData ? (
+                <p className="text-red-500">
+                  No business data uploaded by this owner.
+                </p>
+              ) : (
+                <div className="bg-white shadow rounded-xl p-4 mb-5">
+                  <h3 className="font-semibold text-lg mb-2">Business Data</h3>
 
-        <div className="d-flex gap-3 flex-wrap">
-          {riskAlerts?.map((r, i) => {
-            const owner = owners.find((o) => o._id === r.ownerId);
-
-            return (
-              <div
-                key={i}
-                className="card shadow-sm p-3"
-                style={{ width: 260, cursor: "pointer" }}
-                onClick={() => {
-                  // نجهز الداتا كاملة لصفحة Risk Details
-                  setSelectedRisk({
-                    ownerName: owner?.businessName || owner?.fullName || "Client",
-                    riskLevel: r.level,
-                    riskScore: r.riskScore,
-                    alerts: r.alerts, // ← قائمة الرسائل
-                  });
-
-                  setTab("risk-details");
-                }}
-              >
-                {/* Owner Name */}
-                <strong className="mb-1 d-block">
-                  {owner?.businessName || owner?.fullName || "Client"}
-                </strong>
-
-                {/* Alerts */}
-                {r.alerts?.map((alert, idx) => (
-                  <div key={idx} className="mb-2">
-                    <div className="fw-semibold">{alert.msg}</div>
-
-                    <span
-                      className={`badge mt-2 ${
-                        alert.type === "High"
-                          ? "bg-danger"
-                          : alert.type === "Medium"
-                          ? "bg-warning text-dark"
-                          : alert.type === "Low"
-                          ? "bg-success"
-                          : "bg-secondary"
-                      }`}
-                    >
-                      {alert.type}
-                    </span>
+                  <div className="grid grid-cols-2 gap-3">
+                    <p><strong>Fixed Cost:</strong> {ownerData.fixedCost}</p>
+                    <p><strong>Variable Cost:</strong> {ownerData.variableCost}</p>
+                    <p><strong>Price per Unit:</strong> {ownerData.pricePerUnit}</p>
+                    <p><strong>Avg Units:</strong> {ownerData.avgMonthlyUnits}</p>
                   </div>
-                ))}
+                </div>
+              )}
+
+              {/* ANALYZER PANEL */}
+              <AnalyzerPanel businessData={ownerData} />
+
+              {/* Recommendation Box */}
+              <div className="bg-white shadow p-4 rounded-xl mt-6">
+                <h3 className="font-semibold mb-2">Write Recommendation</h3>
+                <textarea
+                  value={recommendationText}
+                  onChange={(e) => setRecommendationText(e.target.value)}
+                  rows={4}
+                  className="w-full border rounded-lg p-2"
+                  placeholder="Type your recommendation here..."
+                />
+
+                <button
+                  onClick={submitRecommendation}
+                  className="mt-3 bg-blue-600 text-white px-4 py-2 rounded-lg"
+                >
+                  Submit Recommendation
+                </button>
               </div>
-            );
-          })}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* =========================================
-                 ADVISOR POINTS + RANK
-      ========================================= */}
-      <div className="mb-2">
-        <span className="badge bg-danger-subtle text-danger p-3 rounded-3">
-          Advisor Points: {advisor?.points ?? 0}
-        </span>
-        <div className="text-muted">
-          Rank: {advisor?.rank ? `${advisor.rank}th` : "N/A"}
-        </div>
-      </div>
-
-      {/* =========================================
-                 WEEKLY ACTIVITY
-      ========================================= */}
-      <div className="card-neo p-4 mt-3">
-        <h5 className="fw-bold mb-3">Weekly Activity</h5>
-
-        {activity.length === 0 ? (
-          <div className="text-muted">No activity data available</div>
-        ) : (
-          <div style={{ width: "100%", height: 300 }}>
-            <ResponsiveContainer>
-              <BarChart data={activity}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="day" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="valueA" fill="#00b4d8" radius={[6, 6, 0, 0]} />
-                <Bar dataKey="valueB" fill="#023e8a" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        )}
-      </div>
     </div>
   );
 }

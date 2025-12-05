@@ -1,207 +1,100 @@
-// src/Advisor.jsx
-import React, { useEffect, useState } from "react";
-import axios from "axios";
-
+import React, { useState, useEffect } from "react";
 import { Header, Sidebar } from "./components/AdivosrComponents/AdvisorLayout.jsx";
 
+// PANELS
 import DashboardAdvisorPanel from "./components/AdivosrComponents/DashboardAdvisorPanel.jsx";
 import FeedbackPanel from "./components/AdivosrComponents/FeedbackPanel.jsx";
 import AnalyzerPanel from "./components/AdivosrComponents/AnalyzerPanel.jsx";
-import BreakEvenSimulationPanel from "./components/AdivosrComponents/BreakEvenSimulationPanel.jsx";
-import RiskDetailsPanel from "./components/AdivosrComponents/RiskDetailsPanel.jsx";
-import SupportPanel2 from "./components/AdivosrComponents/SupportPanel2.jsx";
-import TicketDetailsPanel from "./components/AdivosrComponents/TicketDetailsPanel.jsx";
 import NotificationsPanel from "./components/AdivosrComponents/NotificationsPanel.jsx";
 import AccountPanel from "./components/AdivosrComponents/AccountPanel.jsx";
-import "./components/AdivosrComponents/index.css";
+import SupportPanel from "./components/AdivosrComponents/SupportPanel2.jsx";
+import RecommendationsPanel from "./components/AdivosrComponents/RecommendationsPanel.jsx";
+
 export default function Advisor() {
-  const [tab, setTab] = useState("dashboard");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  const [selectedClient, setSelectedClient] = useState(null);
-  const [selectedRisk, setSelectedRisk] = useState(null);
-  const [selectedTicket, setSelectedTicket] = useState(null);
-
-  const [data, setData] = useState(null);
-  const [tickets, setTickets] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  /* ================================
-        THEME SETTINGS
-  ================================= */
-  const [settings, setSettings] = useState({
-    themeOption: "system",
-  });
-
   const user = JSON.parse(localStorage.getItem("loggedUser"));
   const advisorId = user?.userId;
 
-  /* ================================
-        LOGOUT HANDLER
-  ================================= */
-  const handleLogout = () => {
-    localStorage.removeItem("loggedUser");
-    window.location.href = "/";
-  };
+  const [tab, setTab] = useState("dashboard");
+  const [theme, setTheme] = useState("light");
+  const [isSidebarOpen, setSidebarOpen] = useState(false);
 
-  /* ================================
-        FETCH DASHBOARD DATA
-  ================================= */
-  const fetchDashboard = async () => {
+  const [owners, setOwners] = useState([]);
+  const [advisor, setAdvisor] = useState(null);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
     try {
-      const res = await axios.get(
+      const res = await fetch(
         `http://localhost:5001/api/advisor/dashboard/${advisorId}`
       );
-
-      setData(res.data);
-      setTickets(res.data.tickets);
+      const data = await res.json();
+      
+      setAdvisor(data.advisor || null);
+      setOwners(data.owners || []);
     } catch (err) {
-      console.error("Dashboard fetch error:", err);
-    } finally {
-      setLoading(false);
+      console.error("Dashboard load error:", err);
     }
   };
 
-  useEffect(() => {
-    if (advisorId) fetchDashboard();
-    else setLoading(false);
-  }, [advisorId]);
-
-  /* ================================
-        FETCH TICKETS ONLY
-  ================================= */
-  const fetchTickets = async () => {
-    try {
-      const res = await axios.get(
-        `http://localhost:5001/api/advisor/tickets/${advisorId}`
-      );
-      setTickets(res.data);
-    } catch (err) {
-      console.error("Ticket fetch error:", err);
-    }
+  const handleLogout = () => {
+    localStorage.removeItem("loggedUser");
+    window.location.href = "/auth";
   };
-
-  /* ================================
-        GUARD — MUST BE ADVISOR
-  ================================= */
-  useEffect(() => {
-    if (!user || user.role !== "advisor") {
-      window.location.href = "/";
-    }
-  }, [user]);
-
-  if (loading) return <div className="p-5 fs-4">Loading...</div>;
-
-  if (!data) {
-    return (
-      <div className="p-5 fs-4 text-danger">
-        Failed to load data — please check backend connection.
-      </div>
-    );
-  }
-
-  const { advisor, owners, feedback, activity, alerts, filteredRisk } = data;
 
   return (
-    <div className="d-flex" style={{ minHeight: "100vh" }}>
+    <div className="app-wrapper">
+      {/* HEADER */}
+      <Header theme={theme} onOpenMenu={() => setSidebarOpen(true)} />
 
       {/* SIDEBAR */}
       <Sidebar
         tab={tab}
-        isOpen={sidebarOpen}
+        setTab={setTab}
+        isOpen={isSidebarOpen}
         onClose={() => setSidebarOpen(false)}
         onLogout={handleLogout}
-        setTab={(id) => {
-          setTab(id);
-          setSidebarOpen(false);
-        }}
       />
 
-      <div className="flex-grow-1 d-flex flex-column">
-        
-        {/* PASS THEME TO HEADER */}
-        <Header
-          onOpenMenu={() => setSidebarOpen(true)}
-          theme={settings.themeOption}
-        />
+      {/* MAIN CONTENT */}
+      <main className="container-fluid py-4">
 
-        <main className="container-fluid py-4">
+        {/* 💙 DASHBOARD */}
+        {tab === "dashboard" && (
+          <DashboardAdvisorPanel advisorId={advisorId} owners={owners} />
+        )}
 
-          {/* Dashboard */}
-          {tab === "dashboard" && (
-            <DashboardAdvisorPanel
-              advisor={advisor}
-              owners={owners}
-              tickets={tickets}
-              activity={activity}
-              alerts={alerts}
-              setTab={setTab}
-              setSelectedClient={setSelectedClient}
-              setSelectedRisk={setSelectedRisk}
-              riskAlerts={filteredRisk}
-            />
-          )}
+        {/* 💛 FEEDBACK */}
+        {tab === "feedback" && (
+          <FeedbackPanel advisorId={advisorId} owners={owners} />
+        )}
 
-          {/* Feedback */}
-          {tab === "feedback" && (
-            <FeedbackPanel
-              feedback={feedback}
-              owners={owners}
-              advisorId={advisor?._id}
-            />
-          )}
+        {/* 🔵 ANALYZER */}
+        {tab === "analyzer" && (
+          <AnalyzerPanel owners={owners} />
+        )}
 
-          {/* Analyzer */}
-          {tab === "analyzer" && <AnalyzerPanel owners={owners} />}
+        {/* ⭐ NEW: RECOMMENDATIONS PAGE */}
+        {tab === "recommendations" && (
+          <RecommendationsPanel advisorId={advisorId} owners={owners} />
+        )}
 
-          {/* Break-even Simulation */}
-          {tab === "simulation_details" && (
-            <BreakEvenSimulationPanel
-              client={selectedClient}
-              setTab={setTab}
-            />
-          )}
+        {/* 🔔 NOTIFICATIONS */}
+        {tab === "notifications" && (
+          <NotificationsPanel advisorId={advisorId} />
+        )}
 
-          {/* Risk Details */}
-          {tab === "risk-details" && (
-            <RiskDetailsPanel
-              risk={selectedRisk}
-              setTab={setTab}
-              setSelectedClient={setSelectedClient}
-            />
-          )}
+        {/* 👤 ACCOUNT */}
+        {tab === "account" && (
+          <AccountPanel advisor={advisor} />
+        )}
 
-          {/* Support */}
-          {tab === "support" && (
-            <SupportPanel2
-              tickets={tickets}
-              fetchTickets={fetchTickets}
-              setSelectedTicket={setSelectedTicket}
-              setTab={setTab}
-            />
-          )}
+        {/* 🆘 SUPPORT */}
+        {tab === "support" && <SupportPanel />}
 
-          {/* Ticket Details */}
-          {tab === "ticket-details" && (
-            <TicketDetailsPanel
-              ticket={selectedTicket}
-              setTab={setTab}
-            />
-          )}
-
-          {/* Notifications */}
-          {tab === "notifications" && <NotificationsPanel />}
-
-          {/* ACCOUNT — PASS SETTINGS */}
-          {tab === "account" && (
-            <AccountPanel
-              settings={settings}
-              setSettings={setSettings}
-            />
-          )}
-
-        </main>
-      </div>
+      </main>
     </div>
   );
 }

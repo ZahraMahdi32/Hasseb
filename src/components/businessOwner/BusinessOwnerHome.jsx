@@ -9,6 +9,7 @@ import CashFlowTool from "./CashFlowTool";
 import OwnerDashboardPanel from "./OwnerDashboardPanel.jsx";
 import AccountPanel from "./AccountPanel.jsx";
 import NotificationsPanel from "./NotificationsPanel.jsx";
+import OwnerFeedbackPanel from "./OwnerFeedbackPanel";
 import { FiUser, FiBell } from "react-icons/fi";
 //import { bepTestData } from "../../data/bepTestData";
 
@@ -137,7 +138,18 @@ export default function OwnerHome() {
                 </svg>
             ),
             requiresData: true
-        }
+        },
+        {
+            id: "feedback",
+            name: "Feedback",
+            icon: (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+            ),
+            requiresData: false
+        },
+
     ];
 
     const handleToolClick = (toolId, requiresData) => {
@@ -245,6 +257,8 @@ export default function OwnerHome() {
                     {activeTool === "insights" && <OwnerDashboardPanel baseData={uploadedData} />}
                     {activeTool === "account" && <AccountPanel settings={{}} setSettings={() => {}} />}
                     {activeTool === "notifications" && <NotificationsPanel />}
+                    {activeTool === "feedback" && <OwnerFeedbackPanel />}
+
 
                     {activeTool === "scenarios" && (
                         <div className="coming-soon-card">

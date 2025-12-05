@@ -226,4 +226,29 @@ router.post("/forgot-password/reset", async (req, res) => {
   }
 });
 
+
+/* ============================================
+   GET USER DETAILS (OWNER OR ADVISOR)
+============================================ */
+router.get("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Try find user in all collections
+    let owner = await Owner.findById(id);
+    if (owner) {
+      return res.json({ role: "owner", owner });
+    }
+
+    let advisor = await Advisor.findById(id);
+    if (advisor) {
+      return res.json({ role: "advisor", advisor });
+    }
+
+    return res.status(404).json({ msg: "User not found" });
+
+  } catch (err) {
+    return res.status(500).json({ msg: "Server error", error: err.message });
+  }
+});
 module.exports = router;
