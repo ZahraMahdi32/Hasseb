@@ -22,6 +22,12 @@ const ownerAdvisorRoutes = require("./src/routes/advisorRoutes/ownerAdvisorRoute
 // Owner routes
 const ownerRoutes = require("./src/routes/OwnerRoutes");
 
+//manager Routes
+const managerUserRoutes = require("./src/routes/ManagerRoutes/User");
+const ticketRoutes = require("./src/routes/ManagerRoutes/TicketRoutes");
+const assignmentRoutes = require("./src/routes/ManagerRoutes/AssignmentRoutes");
+
+
 // ===============================
 //  CONFIG
 // ===============================
@@ -61,6 +67,13 @@ app.use("/api/link", ownerAdvisorRoutes);
 //  OWNER ROUTES
 // ===============================
 app.use("/api/owner", ownerRoutes);
+
+// ===============================
+//  Manager ROUTES
+// ===============================
+app.use("/api/users", managerUserRoutes);
+app.use("/api/tickets", ticketRoutes);
+app.use("/api/assignments", assignmentRoutes);
 
 // ===============================
 //  START SERVER
