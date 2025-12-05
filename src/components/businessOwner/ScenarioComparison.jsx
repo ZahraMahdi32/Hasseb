@@ -129,9 +129,6 @@ export default function ScenarioComparison({ username }) {
         const stressA = runStressTest(A);
         const stressB = runStressTest(B);
 
-        const marginClassA = classifyMargin(marginA);
-        const marginClassB = classifyMargin(marginB);
-
         const riskA = riskScore(marginA, stressA);
         const riskB = riskScore(marginB, stressB);
 
