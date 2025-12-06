@@ -21,7 +21,9 @@ const ownerRoutes = require("./src/routes/OwnerRoutes");
 const scenarioRoutes = require("./src/routes/scenarioRoutes"); 
 const managerUserRoutes = require("./src/routes/ManagerRoutes/User");
 const ticketRoutes = require("./src/routes/ManagerRoutes/TicketRoutes");
-const assignmentRoutes = require("./src/routes/ManagerRoutes/AssignmentRoutes");  
+const assignmentRoutes = require("./src/routes/ManagerRoutes/AssignmentRoutes");
+const notificationRoutes = require("./src/routes/NotificationRoutes");
+
 // ===============================
 //  CONFIG
 // ===============================
@@ -52,10 +54,8 @@ app.use("/api/users", managerUserRoutes);
 app.use("/api/tickets", ticketRoutes);
 app.use("/api/assignments", assignmentRoutes);
 // serve uploaded files
-app.use(
-  "/uploads",
-  express.static(path.join(__dirname, "src", "uploads"))
-);
+app.use("/uploads", express.static(path.join(__dirname, "src", "uploads")));
+app.use("/api/notifications", notificationRoutes);
 // ===============================
 //  START SERVER
 // ===============================

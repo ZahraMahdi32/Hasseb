@@ -2,18 +2,17 @@
 const express = require("express");
 const router = express.Router();
 
-const User = require("../../models/User");          // adjust path if needed
+const User = require("../../models/User");
 const { sendWelcomeEmail } = require("../../utils/email");
 
-// ---------- Helper: generate default username ----------
 function generateUsername(role, fullName) {
   const year = new Date().getFullYear();
 
   const clean = fullName
     .trim()
     .toLowerCase()
-    .replace(/\s+/g, ".")        
-    .replace(/[^a-z.]/g, "");    
+    .replace(/\s+/g, ".")
+    .replace(/[^a-z.]/g, "");
 
   const random = Math.floor(10000 + Math.random() * 90000); 
 
@@ -135,12 +134,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-/* =======================================================
-   ASSIGNMENT ROUTES
-   - GET /api/users/owners-advisors
-   - PUT /api/users/:ownerId/assign-advisor
-   For manager to assign advisors to owners
-======================================================= */
+
 
 // list owners + advisors + each owner's current advisor
 router.get("/owners-advisors", async (req, res) => {
@@ -259,7 +253,6 @@ router.get("/owners-advisors", async (req, res) => {
 });
 
 /* =======================================================
-   GET /api/users/:id
    Fetch a single user (used by AccountPanel)
 ======================================================= */
 router.get("/:id", async (req, res) => {
@@ -291,7 +284,6 @@ router.put("/:ownerId/assign-advisor", async (req, res) => {
 
 
 /* =======================================================
-   PUT /api/users/:id
    Edit an existing user (name, email, role, status)
 ======================================================= */
 router.put("/:id", async (req, res) => {
@@ -359,7 +351,6 @@ router.put("/:id", async (req, res) => {
 });
 
 /* =======================================================
-   DELETE /api/users/:id
    Delete a user
 ======================================================= */
 router.delete("/:id", async (req, res) => {

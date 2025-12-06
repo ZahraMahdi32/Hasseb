@@ -29,10 +29,7 @@ function mapTicket(doc) {
   };
 }
 
-/**
- * POST /api/tickets
- * body: { fromUserId, fromRole, subject, message }
- */
+
 router.post("/", async (req, res) => {
   try {
     const { fromUserId, fromRole, subject, message } = req.body;
@@ -72,38 +69,19 @@ router.post("/", async (req, res) => {
   }
 });
 
-/**
- * GET /api/tickets
- * Manager:  GET /api/tickets
- * Advisor:  GET /api/tickets?role=advisor&userId=...
- * Owner:    GET /api/tickets?role=owner&userId=...
- */
+
 router.get("/", async (req, res) => {
   try {
-    const { role, userId, username } = req.query;
+    const { role, userId } = req.query;
 
     let filter = {};
-
-    // If role + userId/username are provided → only that user's tickets
-    if (role && (userId || username)) {
-      let userObjectId = userId;
-
-      // If username is provided, look up the user's _id first
-      if (!userObjectId && username) {
-        const user = await User.findOne({ username });
-        if (!user) {
-          return res.status(404).json({ msg: "User not found for username." });
-        }
-        userObjectId = user._id.toString();
-      }
-
-      filter = { fromUser: userObjectId };
+    if (role && userId) {
+      filter = { fromUser: userId };
     }
-    // Else: no role/user filter → manager sees ALL tickets
 
     const tickets = await Ticket.find(filter)
       .sort({ updatedAt: -1 })
-      .populate("fromUser", "fullName email username");
+      .populate("fromUser", "fullName email");
 
     return res.json(tickets.map(mapTicket));
   } catch (err) {
@@ -113,10 +91,8 @@ router.get("/", async (req, res) => {
       .json({ msg: "Failed to load tickets", error: err.message });
   }
 });
-/**
- * PUT /api/tickets/:id/status
- * body: { status: "open" | "inprogress" | "resolved" }
- */
+
+
 router.put("/:id/status", async (req, res) => {
   try {
     const { status } = req.body;
@@ -145,10 +121,6 @@ router.put("/:id/status", async (req, res) => {
   }
 });
 
-/**
- * POST /api/tickets/:id/reply
- * body: { senderRole: "owner" | "advisor" | "manager", text }
- */
 router.post("/:id/reply", async (req, res) => {
   try {
     const { senderRole, text } = req.body;
