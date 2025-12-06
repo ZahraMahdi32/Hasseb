@@ -87,8 +87,16 @@ Make sure you have the following installed:
    ```bash
    npm install multer
    ```
-
 8. **Start the development server**
+   ```bash
+   npm install axios
+   ```   
+9. **Start the development server**
+   ```bash
+   npm install chart.js react-chartjs-2
+   ```
+
+10. **Start the development server**
    ```bash
    npm start
    ```
