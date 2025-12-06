@@ -2,10 +2,7 @@ const express = require("express");
 const router = express.Router();
 const Assignment = require("../../models/Assignment");
 
-// =============================
-// GET all assignments
-// GET /api/assignments
-// =============================
+
 router.get("/", async (req, res) => {
   try {
     const list = await Assignment.find().lean();
@@ -16,11 +13,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-// =============================
-// CREATE assignment
-// POST /api/assignments
-// body: { advisorId, ownerId }
-// =============================
+
 router.post("/", async (req, res) => {
   try {
     const { advisorId, ownerId } = req.body;
@@ -47,10 +40,6 @@ router.post("/", async (req, res) => {
   }
 });
 
-// =============================
-// DELETE assignment by id
-// DELETE /api/assignments/:id
-// =============================
 router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -67,11 +56,7 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-// =============================
-// GET assignment by owner
-// used by owner when sharing
-// GET /api/assignments/owner/:ownerId
-// =============================
+
 router.get("/owner/:ownerId", async (req, res) => {
   try {
     const { ownerId } = req.params;

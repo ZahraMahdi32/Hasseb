@@ -1,147 +1,153 @@
-import React, { useState } from "react";
+// src/components/support/TicketDetailsPanel.jsx
+import React, { useEffect, useState } from "react";
 import { FiArrowLeft, FiSend, FiAlertCircle } from "react-icons/fi";
 import "../../SharedStyles/SharedSupport.css";
-import "../../SharedStyles/SharedTicketDetails.css";
+
+const API_BASE = "http://localhost:5001/api";
 
 export default function TicketDetailsPanel({ ticket, setTab }) {
-  const user = JSON.parse(localStorage.getItem("loggedUser"));
-  const role = user?.role || "advisor";
+  // Read logged user (saved on login by HaseebAuth)
+  let loggedUser = null;
+  try {
+    const raw = localStorage.getItem("loggedUser");
+    loggedUser = raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    console.error("Failed to parse loggedUser", e);
+  }
 
+  const role = loggedUser?.role || "advisor"; // "advisor" in this screen
+
+  const [currentTicket, setCurrentTicket] = useState(ticket || null);
   const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
 
-  if (!ticket) {
+  // If parent changes the selected ticket, keep in sync
+  useEffect(() => {
+    setCurrentTicket(ticket || null);
+  }, [ticket]);
+
+  async function sendReply() {
+    if (!currentTicket || !reply.trim()) return;
+
+    try {
+      setSending(true);
+      setError("");
+
+      const res = await fetch(
+        `${API_BASE}/tickets/${currentTicket.id}/reply`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            senderRole: role,          // "advisor"
+            text: reply.trim(),
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.message || "Failed to send reply");
+      }
+
+      const updated = await res.json();
+      // backend returns updated ticket (mapTicket), including messages
+      setCurrentTicket(updated);
+      setReply("");
+    } catch (err) {
+      console.error("sendReply error:", err);
+      setError(err.message || "Failed to send reply.");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  function roleLabel(senderRole) {
+    if (senderRole === "manager") return "Manager";
+    if (senderRole === "advisor") return "You";
+    if (senderRole === "owner") return "Owner";
+    return senderRole;
+  }
+
+  if (!currentTicket) {
     return (
-      <div className="ticket-not-found">
-        <FiAlertCircle size={48} />
-        <p>No ticket selected. Please select one from support page.</p>
+      <div className="ticket-details-container">
+        <p>No ticket selected.</p>
+        <button className="back-btn" onClick={() => setTab("support")}>
+          <FiArrowLeft size={18} /> Back
+        </button>
       </div>
     );
   }
 
-  async function sendReply() {
-    if (!reply.trim()) return;
-
-    try {
-        setSending(true);
-        setError("");
-
-        const res = await fetch(
-            `http://localhost:5001/api/tickets/${ticket.id}/reply`,
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    senderRole: role,
-                    text: reply.trim(),
-                }),
-            }
-        );
-
-        if (!res.ok) {
-            const errBody = await res.json().catch(() => ({}));
-            throw new Error(errBody.message || "Failed to send reply");
-        }
-
-        // 🟢 Add reply instantly to UI
-        const newMessage = {
-            senderRole: role,
-            text: reply.trim(),
-            at: new Date().toISOString(),
-        };
-
-        ticket.messages = [...(ticket.messages || []), newMessage];
-
-        setReply("");
-
-    } catch (err) {
-        console.error("sendReply error:", err);
-        setError(err.message || "Failed to send reply.");
-    } finally {
-        setSending(false);
-    }
-  }
-
-
-
-  function getStatusClass(status) {
-    if (status === "resolved") return "status-resolved";
-    if (status === "inprogress") return "status-progress";
-    return "status-open";
-  }
-
   return (
     <div className="ticket-details-container">
-
-      {/* BACK BUTTON */}
       <button className="back-btn" onClick={() => setTab("support")}>
         <FiArrowLeft size={20} />
         Back to Tickets
       </button>
 
-      {/* MAIN CARD */}
       <div className="ticket-details-card">
-
-        {/* HEADER */}
         <div className="ticket-header">
-          <h1 className="ticket-subject">{ticket.subject}</h1>
-
-          <span className={`ticket-status ${getStatusClass(ticket.status)}`}>
-            {ticket.status}
+          <h1 className="ticket-subject">{currentTicket.subject}</h1>
+          <span className={`ticket-status status-${currentTicket.status}`}>
+            {currentTicket.status === "resolved"
+              ? "Resolved"
+              : currentTicket.status === "inprogress"
+              ? "In Progress"
+              : "Open"}
           </span>
         </div>
 
-        {/* META INFO */}
         <div className="ticket-meta">
-          <span>Created: {new Date(ticket.createdAt).toLocaleString()}</span>
-          {ticket.updatedAt && (
-            <span>Updated: {new Date(ticket.updatedAt).toLocaleString()}</span>
+          <span>
+            Created:{" "}
+            {currentTicket.createdAt
+              ? new Date(currentTicket.createdAt).toLocaleString()
+              : "-"}
+          </span>
+          {currentTicket.updatedAt && (
+            <span>
+              Updated: {new Date(currentTicket.updatedAt).toLocaleString()}
+            </span>
           )}
         </div>
 
         <div className="divider" />
 
-        {/* CONVERSATION */}
         <h3 className="conversation-title">Conversation</h3>
 
         <div className="messages-container">
-          {ticket.messages?.length ? (
-            ticket.messages.map((m, i) => {
-              const isAdvisor = m.senderRole === "advisor";
-              const isManager = m.senderRole === "manager";
-
-              return (
-                <div
-                  key={i}
-                  className={`message ${
-                    isAdvisor
-                      ? "message-advisor"
-                      : isManager
-                      ? "message-manager"
-                      : "message-owner"
-                  }`}
-                >
-                  <div className="message-bubble">
-                    <div className="message-sender">
-                      {isManager ? "Manager" : isAdvisor ? "You" : m.senderRole}
-                    </div>
-
-                    <div className="message-text">{m.text}</div>
-
-                    <div className="message-time">
-                      {m.at ? new Date(m.at).toLocaleString() : ""}
-                    </div>
+          {currentTicket.messages && currentTicket.messages.length > 0 ? (
+            currentTicket.messages.map((m) => (
+              <div
+                key={m._id}
+                className={
+                  "message " +
+                  (m.senderRole === "advisor"
+                    ? "message-advisor"
+                    : "message-manager")
+                }
+              >
+                <div className="message-bubble">
+                  <div className="message-sender">
+                    {roleLabel(m.senderRole)}
+                  </div>
+                  <div className="message-text">{m.text}</div>
+                  <div className="message-time">
+                    {m.at ? new Date(m.at).toLocaleString() : ""}
                   </div>
                 </div>
-              );
-            })
+              </div>
+            ))
           ) : (
-            <div className="no-messages">No messages.</div>
+            <div className="no-messages">
+              No messages yet for this ticket.
+            </div>
           )}
         </div>
 
-        {/* ERROR */}
         {error && (
           <div className="reply-error">
             <FiAlertCircle size={18} />
@@ -149,22 +155,23 @@ export default function TicketDetailsPanel({ ticket, setTab }) {
           </div>
         )}
 
-        {/* REPLY BOX */}
         <div className="reply-section">
           <input
             className="reply-input"
-            placeholder="Type your reply..."
+            placeholder="Type a reply…"
             value={reply}
             onChange={(e) => setReply(e.target.value)}
-            onKeyPress={(e) => {
-              if (e.key === "Enter" && !sending && reply.trim()) sendReply();
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !sending && reply.trim()) {
+                e.preventDefault();
+                sendReply();
+              }
             }}
           />
-
           <button
             className="reply-btn"
-            disabled={sending || !reply.trim()}
             onClick={sendReply}
+            disabled={sending || !reply.trim()}
           >
             <FiSend size={18} />
             {sending ? "Sending…" : "Send"}

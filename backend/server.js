@@ -22,6 +22,10 @@ const pricingScenarioRoutes = require("./src/routes/pricingScenarioRoutes");
 const managerUserRoutes = require("./src/routes/ManagerRoutes/User");
 const ticketRoutes = require("./src/routes/ManagerRoutes/TicketRoutes");
 const assignmentRoutes = require("./src/routes/ManagerRoutes/AssignmentRoutes");
+<<<<<<< HEAD
+=======
+const notificationRoutes = require("./src/routes/NotificationRoutes");
+>>>>>>> 400905bcb967bcce479503ec61168c1664a136af
 
 // ===============================
 //  CONFIG
@@ -63,6 +67,9 @@ app.use("/uploads", express.static(path.join(__dirname, "src", "uploads")));
 app.use("/api/break-even-scenarios",require("./src/routes/breakEvenScenarioRoutes"));
 app.use("/api/business-data", require("./src/routes/businessDataOwnerRoute"));
 
+// serve uploaded files
+app.use("/uploads", express.static(path.join(__dirname, "src", "uploads")));
+app.use("/api/notifications", notificationRoutes);
 // ===============================
 //  START SERVER
 // ===============================

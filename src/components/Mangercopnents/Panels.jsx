@@ -766,72 +766,7 @@ export function SettingsPanel({ settings, setSettings, users = [] }) {
               </ul>
             )}
           </div>
-        </div>
-
-        {/* Notifications card */}
-        <div className="card shadow-sm">
-          <div className="card-body">
-            <h5>Notifications</h5>
-
-            <div className="form-check">
-              <input
-                id="n1"
-                className="form-check-input"
-                type="checkbox"
-                checked={notifications.emailAlerts}
-                onChange={(e) =>
-                  setNotifications((n) => ({
-                    ...n,
-                    emailAlerts: e.target.checked,
-                  }))
-                }
-              />
-              <label htmlFor="n1" className="form-check-label">
-                Email Alerts
-              </label>
-            </div>
-
-            <div className="form-check">
-              <input
-                id="n2"
-                className="form-check-input"
-                type="checkbox"
-                checked={notifications.ticketBadge}
-                onChange={(e) =>
-                  setNotifications((n) => ({
-                    ...n,
-                    ticketBadge: e.target.checked,
-                  }))
-                }
-              />
-              <label htmlFor="n2" className="form-check-label">
-                Ticket Badge Counter
-              </label>
-            </div>
-
-            <div className="form-check mb-3">
-              <input
-                id="n3"
-                className="form-check-input"
-                type="checkbox"
-                checked={notifications.push}
-                onChange={(e) =>
-                  setNotifications((n) => ({
-                    ...n,
-                    push: e.target.checked,
-                  }))
-                }
-              />
-              <label htmlFor="n3" className="form-check-label">
-                Push Notifications
-              </label>
-            </div>
-
-            <button className="btn btn-dark mt-1" onClick={save}>
-              Save Settings
-            </button>
-          </div>
-        </div>
+        </div>       
       </div>
 
       {/* RIGHT COLUMN: Assignment Summary */}
@@ -916,107 +851,143 @@ export function SettingsPanel({ settings, setSettings, users = [] }) {
   );
 }
 
+
 /*  ANALYTICS  */
 export function AnalyticsPanel({ analytics, users, refresh }) {
-  // Summary counts from real users coming from the backend
   const actives = users.filter((u) => u.status === "active").length;
   const total = users.length;
   const inactive = users.filter((u) => u.status === "inactive").length;
   const suspended = users.filter((u) => u.status === "suspended").length;
   const ratio = total ? Math.round((actives / total) * 100) : 0;
 
-  // Which simulator is used most – still using analytics.simulations
-  const mostRunKey = Object.entries(analytics?.simulations || {}).sort(
-    (a, b) => b[1] - a[1]
-  )[0]?.[0];
+  // Helper to display a meaningful name
+  const displayName = (u) =>
+    u.name || u.fullName || u.username || u.email;
 
-  const insights = [
-    total === 0
-      ? "You have no users yet. Invite your first user to get started."
-      : `You have ${total} total users and ${actives} active (${ratio}%).`,
-    inactive > 0
-      ? `${inactive} user(s) are inactive — consider onboarding emails.`
-      : null,
-    suspended > 0
-      ? `${suspended} user(s) are suspended — review and resolve if needed.`
-      : null,
-    mostRunKey
-      ? `Most used simulator: ${mostRunKey}. Consider prioritizing improvements there.`
-      : null,
-  ].filter(Boolean);
-
-  // 🔥 Usage Over Time chart data: ONLY from users[]
+  /* ---------------- CHART: USAGE OVER TIME ---------------- */
   const chartData = useMemo(() => {
     const countsByMonthKey = {};
-
-    // Count ONLY active users, grouped by last activity month
     users.forEach((u) => {
       if (u.status !== "active") return;
 
-      const baseDate = u.lastLoginAt || u.createdAt;
-      if (!baseDate) return;
+      const base = u.lastLoginAt || u.createdAt;
+      if (!base) return;
 
-      const d = new Date(baseDate);
+      const d = new Date(base);
       if (Number.isNaN(d.getTime())) return;
 
-      const monthKey = `${d.getFullYear()}-${String(
-        d.getMonth() + 1
-      ).padStart(2, "0")}`;
-
-      countsByMonthKey[monthKey] = (countsByMonthKey[monthKey] || 0) + 1;
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      countsByMonthKey[key] = (countsByMonthKey[key] || 0) + 1;
     });
-
-    // Build last 6 months timeline
     const out = [];
     const now = new Date();
     for (let i = 5; i >= 0; i--) {
       const dt = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthKey = `${dt.getFullYear()}-${String(
-        dt.getMonth() + 1
-      ).padStart(2, "0")}`;
+      const key = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}`;
       out.push({
         month: dt.toLocaleString(undefined, { month: "short" }),
-        users: countsByMonthKey[monthKey] || 0,
+        users: countsByMonthKey[key] || 0,
       });
     }
     return out;
   }, [users]);
 
+  /* ---------------- THIS MONTH’S ACTIVITY ---------------- */
+  const {
+    signupsThisMonth,
+    loginsThisMonth,
+    signupUsersThisMonth,
+    loginUsersThisMonth,
+  } = useMemo(() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+
+    const signups = [];
+    const logins = [];
+
+    users.forEach((u) => {
+      if (u.createdAt) {
+        const d = new Date(u.createdAt);
+        if (d.getFullYear() === year && d.getMonth() === month) {
+          signups.push(u);
+        }
+      }
+      if (u.lastLoginAt) {
+        const d = new Date(u.lastLoginAt);
+        if (d.getFullYear() === year && d.getMonth() === month) {
+          logins.push(u);
+        }
+      }
+    });
+
+    signups.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    logins.sort((a, b) => new Date(b.lastLoginAt) - new Date(a.lastLoginAt));
+
+    return {
+      signupsThisMonth: signups.length,
+      loginsThisMonth: logins.length,
+      signupUsersThisMonth: signups,
+      loginUsersThisMonth: logins,
+    };
+  }, [users]);
+
+  /* ---------------- INSIGHTS ---------------- */
+  const insights = [
+    total === 0
+      ? "You have no users yet."
+      : `You have ${total} total users and ${actives} active (${ratio}%).`,
+    inactive > 0
+      ? `${inactive} inactive user(s). Consider onboarding support.`
+      : null,
+    suspended > 0
+      ? `${suspended} suspended user(s). Review their accounts.`
+      : null,
+    `${signupsThisMonth} new signup(s) this month.`,
+    `${loginsThisMonth} user(s) logged in this month.`,
+  ].filter(Boolean);
+
+  /* ======================== RENDER ======================== */
+
   return (
     <div className="row g-3">
-      {/* Top summary cards */}
+
       <div className="col-12">
         <div className="row g-3 mb-2">
+
           <div className="col-6 col-md-3">
-            <section className="card shadow-sm border-0 p-3 rounded-3">
+            <section className="card shadow-sm p-3 rounded-3 border-0">
               <p className="text-muted small mb-1">Active Users</p>
-              <h3 className="m-0 fw-semibold text-success">{actives}</h3>
+              <h3 className="fw-semibold text-success">{actives}</h3>
             </section>
           </div>
+
           <div className="col-6 col-md-3">
-            <section className="card shadow-sm border-0 p-3 rounded-3">
+            <section className="card shadow-sm p-3 rounded-3 border-0">
               <p className="text-muted small mb-1">Total Users</p>
-              <h3 className="m-0 fw-semibold">{total}</h3>
+              <h3 className="fw-semibold">{total}</h3>
             </section>
           </div>
+
           <div className="col-6 col-md-3">
-            <section className="card shadow-sm border-0 p-3 rounded-3">
+            <section className="card shadow-sm p-3 rounded-3 border-0">
               <p className="text-muted small mb-1">Inactive</p>
-              <h3 className="m-0 fw-semibold text-warning">{inactive}</h3>
+              <h3 className="fw-semibold text-warning">{inactive}</h3>
             </section>
           </div>
+
           <div className="col-6 col-md-3">
-            <section className="card shadow-sm border-0 p-3 rounded-3">
+            <section className="card shadow-sm p-3 rounded-3 border-0">
               <p className="text-muted small mb-1">Suspended</p>
-              <h3 className="m-0 fw-semibold text-danger">{suspended}</h3>
+              <h3 className="fw-semibold text-danger">{suspended}</h3>
             </section>
           </div>
         </div>
       </div>
 
-      {/* Usage Over Time (Bar Chart) */}
+      {/* ---------- USAGE OVER TIME CHART ---------- */}
       <div className="col-12">
-        <div className="card shadow-sm">
+        <div className="card shadow-sm border-0">
           <div className="card-body">
             <div className="d-flex justify-content-between align-items-center mb-2">
               <h5 className="mb-0">Usage Over Time</h5>
@@ -1025,17 +996,31 @@ export function AnalyticsPanel({ analytics, users, refresh }) {
                   ? `Last updated: ${new Date(
                       analytics.lastUpdated
                     ).toLocaleString()}`
-                  : null}
+                  : ""}
               </small>
             </div>
+
             <div style={{ width: "100%", height: 300 }}>
               <ResponsiveContainer>
                 <BarChart data={chartData}>
+                  <defs>
+                    {/* CUSTOM BAR COLOR HERE */}
+                    <linearGradient id="usageColor" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#4facfe" />
+                      <stop offset="100%" stopColor="#00f2fe" />
+                    </linearGradient>
+                  </defs>
+
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
                   <YAxis allowDecimals={false} />
                   <Tooltip />
-                  <Bar dataKey="users" fill="#0d6efd" radius={[6, 6, 0, 0]} />
+
+                  <Bar
+                    dataKey="users"
+                    fill="url(#usageColor)"
+                    radius={[6, 6, 0, 0]}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -1043,50 +1028,89 @@ export function AnalyticsPanel({ analytics, users, refresh }) {
         </div>
       </div>
 
-      {/* Simulations */}
+      {/* ---------- THIS MONTH’S ACTIVITY (SIGNUPS + LOGINS) ---------- */}
       <div className="col-12 col-lg-6">
-        <div className="card shadow-sm">
+        <div className="card shadow-sm border-0 h-100">
           <div className="card-body">
-            <div className="d-flex justify-content-between align-items-center">
-              <h5>Simulations Run</h5>
-              <button className="btn btn-sm btn-outline-secondary" onClick={refresh}>
+
+            <div className="d-flex justify-content-between align-items-center mb-2">
+              <h5>This Month&apos;s Activity</h5>
+              <button
+                className="btn btn-sm btn-outline-secondary"
+                onClick={refresh}
+              >
                 Refresh
               </button>
             </div>
-            <ul className="list-group mt-2">
-              <li className="list-group-item d-flex justify-content-between">
-                Break-even{" "}
-                <span className="fw-bold">
-                  {analytics?.simulations?.breakeven ?? 0}
-                </span>
-              </li>
-              <li className="list-group-item d-flex justify-content-between">
-                Pricing{" "}
-                <span className="fw-bold">
-                  {analytics?.simulations?.pricing ?? 0}
-                </span>
-              </li>
-              <li className="list-group-item d-flex justify-content-between">
-                Cash Flow{" "}
-                <span className="fw-bold">
-                  {analytics?.simulations?.cashflow ?? 0}
-                </span>
-              </li>
-            </ul>
-            <div className="small text-muted mt-2">
-              {analytics?.lastUpdated
-                ? `Last updated: ${new Date(
-                    analytics.lastUpdated
-                  ).toLocaleString()}`
-                : null}
+
+            <p className="small text-muted mb-3">
+              <strong>{signupsThisMonth}</strong> new signup(s) this month ·{" "}
+              <strong>{loginsThisMonth}</strong> user(s) logged in this month.
+            </p>
+
+            <div className="row">
+              {/* New signups list */}
+              <div className="col-12 col-md-6">
+                <h6 className="small text-muted">New signups (latest)</h6>
+                <ul className="list-group small">
+                  {signupUsersThisMonth.length === 0 && (
+                    <li className="list-group-item text-muted">
+                      No signups this month.
+                    </li>
+                  )}
+
+                  {signupUsersThisMonth.slice(0, 5).map((u) => (
+                    <li key={u._id || u.userId} className="list-group-item">
+                      <div className="fw-semibold">{displayName(u)}</div>
+                      <div className="text-muted">
+                        Joined:{" "}
+                        {u.createdAt
+                          ? new Date(u.createdAt).toLocaleString()
+                          : "-"}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Recent logins list */}
+              <div className="col-12 col-md-6 mt-3 mt-md-0">
+                <h6 className="small text-muted">Recent logins</h6>
+                <ul className="list-group small">
+                  {loginUsersThisMonth.length === 0 && (
+                    <li className="list-group-item text-muted">
+                      No logins this month.
+                    </li>
+                  )}
+
+                  {loginUsersThisMonth.slice(0, 5).map((u) => (
+                    <li key={u._id || u.userId} className="list-group-item">
+                      <div className="fw-semibold">{displayName(u)}</div>
+                      <div className="text-muted">
+                        Last login:{" "}
+                        {u.lastLoginAt
+                          ? new Date(u.lastLoginAt).toLocaleString()
+                          : "-"}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
+
+            {analytics?.lastUpdated && (
+              <div className="small text-muted mt-3">
+                Last updated:{" "}
+                {new Date(analytics.lastUpdated).toLocaleString()}
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Usage Insights */}
+      {/* ---------- USAGE INSIGHTS ---------- */}
       <div className="col-12 col-lg-6">
-        <div className="card shadow-sm h-100">
+        <div className="card shadow-sm border-0 h-100">
           <div className="card-body">
             <h5>Usage Insights</h5>
             <ul className="small mb-0">
@@ -1105,15 +1129,18 @@ export function AnalyticsPanel({ analytics, users, refresh }) {
 }
 
 
+
 /*  SUPPORT  */
-export function SupportPanel({ tickets, setTickets }) {
-  const safeTickets = Array.isArray(tickets) ? tickets : [];
+export function SupportPanel() {
+  const [tickets, setTickets] = useState([]);
   const [q, setQ] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [reply, setReply] = useState("");
   const [activeId, setActiveId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const safeTickets = Array.isArray(tickets) ? tickets : [];
 
   // ----- Load tickets from backend -----
   async function fetchTickets() {
@@ -1123,22 +1150,25 @@ export function SupportPanel({ tickets, setTickets }) {
 
       const res = await fetch(TICKETS_API_URL);
       if (!res.ok) {
-        throw new Error("Failed to fetch tickets");
+        throw new Error(`Failed to fetch tickets (status ${res.status})`);
       }
 
-      const data = await res.json(); // backend array
+      const data = await res.json();
+      const rawTickets = Array.isArray(data) ? data : data?.tickets || [];
 
-      // Normalize into shape SupportPanel expects
-      const normalized = (data || []).map((t) => ({
+      // Shape returned by TicketRoutes.mapTicket
+      const normalized = rawTickets.map((t) => ({
         id: t.id,
         subject: t.subject,
         fromEmail: t.fromEmail || "",
         fromName: t.fromName || "",
+        fromRole: t.fromRole || "",
         status: t.status || "open",
         createdAt: t.createdAt,
         updatedAt: t.updatedAt,
         messages: (t.messages || []).map((m, idx) => ({
-          id: m._id || idx, // we just need a stable key
+          id: m._id || idx,
+          senderRole: m.senderRole,
           sender: m.senderRole === "manager" ? "pm" : "user",
           text: m.text,
           at: m.at,
@@ -1147,7 +1177,7 @@ export function SupportPanel({ tickets, setTickets }) {
 
       setTickets(normalized);
 
-      // If no active ticket yet, pick first
+      // If nothing is selected yet, select the first ticket
       if (!activeId && normalized.length > 0) {
         setActiveId(normalized[0].id);
       }
@@ -1159,22 +1189,18 @@ export function SupportPanel({ tickets, setTickets }) {
     }
   }
 
-  // Load tickets on first mount
+  // Load once on mount
   useEffect(() => {
     fetchTickets();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Keep activeId valid if tickets change
-  useEffect(
-    function () {
-      const hasActive = safeTickets.some((t) => t.id === activeId);
-      if (!hasActive) {
-        setActiveId(safeTickets.length > 0 ? safeTickets[0].id : null);
-      }
-    },
-    [safeTickets, activeId]
-  );
+  // Keep activeId valid when tickets list changes
+  useEffect(() => {
+    const hasActive = safeTickets.some((t) => t.id === activeId);
+    if (!hasActive) {
+      setActiveId(safeTickets.length > 0 ? safeTickets[0].id : null);
+    }
+  }, [safeTickets, activeId]);
 
   // ----- Filter tickets -----
   const term = q ? q.trim().toLowerCase() : "";
@@ -1188,7 +1214,9 @@ export function SupportPanel({ tickets, setTickets }) {
       const email = (t.fromEmail || "").toLowerCase();
       const msgHit =
         t.messages &&
-        t.messages.some((m) => (m.text || "").toLowerCase().includes(term));
+        t.messages.some((m) =>
+          (m.text || "").toLowerCase().includes(term)
+        );
 
       matchesQ = subj.includes(term) || email.includes(term) || msgHit;
     }
@@ -1219,7 +1247,6 @@ export function SupportPanel({ tickets, setTickets }) {
         throw new Error("Failed to update ticket status");
       }
 
-      // Reload from backend to keep in sync
       await fetchTickets();
     } catch (err) {
       console.error("updateTicketStatus error:", err);
@@ -1253,26 +1280,30 @@ export function SupportPanel({ tickets, setTickets }) {
       });
 
       if (!res.ok) {
-        throw new Error("Failed to send reply");
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.message || "Failed to send reply");
       }
 
       setReply("");
-      // Reload tickets including updated messages
       await fetchTickets();
     } catch (err) {
       console.error("sendMessage error:", err);
-      setError("Failed to send reply.");
+      setError(err.message || "Failed to send reply.");
     } finally {
       setLoading(false);
     }
   }
 
+  // ----- Render -----
   return (
     <div className="row g-3">
       <div className="col-12">
         {/* Filters & Search */}
         <div className="p-3 bg-light rounded shadow-sm d-flex flex-wrap align-items-center gap-2">
-          <div className="flex-grow-1 position-relative" style={{ minWidth: 300 }}>
+          <div
+            className="flex-grow-1 position-relative"
+            style={{ minWidth: 300 }}
+          >
             <FiSearch
               size={18}
               className="position-absolute text-muted"
@@ -1304,7 +1335,9 @@ export function SupportPanel({ tickets, setTickets }) {
         </div>
 
         {error && (
-          <div className="alert alert-danger mt-2 py-2 small mb-0">{error}</div>
+          <div className="alert alert-danger mt-2 py-2 small mb-0">
+            {error}
+          </div>
         )}
       </div>
 
@@ -1360,7 +1393,7 @@ export function SupportPanel({ tickets, setTickets }) {
                     </div>
                   </div>
 
-                  {/* Preview */}
+                  {/* Preview of first message */}
                   <div className="text-muted mt-2 small">
                     {t.messages && t.messages[0] && t.messages[0].text
                       ? t.messages[0].text.length > 200
@@ -1396,8 +1429,9 @@ export function SupportPanel({ tickets, setTickets }) {
                       onClick={() => {
                         setActiveId(t.id);
                         const el = document.getElementById("ticket-reply");
-                        if (el && el.scrollIntoView)
+                        if (el && el.scrollIntoView) {
                           el.scrollIntoView({ behavior: "smooth" });
+                        }
                       }}
                     >
                       Reply
@@ -1439,7 +1473,7 @@ export function SupportPanel({ tickets, setTickets }) {
                 >
                   {active.messages && active.messages.length > 0 ? (
                     active.messages.map((m) => {
-                      const isPm = m && m.sender === "pm";
+                      const isPm = m && m.senderRole === "manager";
                       const badgeClass =
                         "badge text-bg-" +
                         (isPm ? "secondary" : "info") +
