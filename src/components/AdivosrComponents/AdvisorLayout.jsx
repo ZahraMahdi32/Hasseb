@@ -7,7 +7,7 @@ import {
   FiBell,
   FiHelpCircle
 } from "react-icons/fi";
-import "../../styles/Layout.css"
+import "../../SharedStyles/Layout.css"
 
 /* ============================
         HEADER
