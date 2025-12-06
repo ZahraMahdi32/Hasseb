@@ -9,11 +9,7 @@ import CashFlowTool from "./CashFlowTool";
 import OwnerDashboardPanel from "./OwnerDashboardPanel.jsx";
 import AccountPanel from "./AccountPanel.jsx";
 import NotificationsPanel from "./NotificationsPanel.jsx";
-<<<<<<< HEAD
-import OwnerFeedbackPanel from "./OwnerFeedbackPanel";
-=======
 import ScenarioComparison from "./ScenarioComparison.jsx";
->>>>>>> 1e0b9bd46dd3a6d7a97106f3cbf4311dc54ed5fa
 import { FiUser, FiBell } from "react-icons/fi";
 
 export default function OwnerHome() {
@@ -182,24 +178,8 @@ export default function OwnerHome() {
                     <line x1="9" y1="21" x2="9" y2="9"></line>
                 </svg>
             ),
-<<<<<<< HEAD
-            requiresData: true
-        },
-        {
-            id: "feedback",
-            name: "Feedback",
-            icon: (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                </svg>
-            ),
-            requiresData: false
-        },
-
-=======
             requiresData: true,
         },
->>>>>>> 1e0b9bd46dd3a6d7a97106f3cbf4311dc54ed5fa
     ];
 
     const handleToolClick = (toolId /*, requiresData*/) => {
@@ -393,28 +373,9 @@ export default function OwnerHome() {
                         <NotificationsPanel />
                     )}
 
-<<<<<<< HEAD
-                    {activeTool === "data" && <BusinessDataUpload onUploadSuccess={handleUploadSuccess} />}
-                    {activeTool === "breakEven" && <BreakEvenCalculator baseData={uploadedData} />}
-                    {activeTool === "pricing" && <PricingSimulator baseData={uploadedData} />}
-                    {activeTool === "cashflow" && <CashFlowTool baseData={uploadedData} />}
-                    {activeTool === "insights" && <OwnerDashboardPanel baseData={uploadedData} />}
-                    {activeTool === "account" && <AccountPanel settings={{}} setSettings={() => {}} />}
-                    {activeTool === "notifications" && <NotificationsPanel />}
-                    {activeTool === "feedback" && <OwnerFeedbackPanel />}
-
-
-                    {activeTool === "scenarios" && (
-                        <div className="coming-soon-card">
-                            <h3>Scenarios</h3>
-                            <p>This feature is under development.</p>
-                            <span className="coming-soon-badge">Coming Soon</span>
-                        </div>
-=======
                     {/* 🔹 NEW: Active scenarios page */}
                     {activeTool === "scenarios" && username && (
                         <ScenarioComparison username={username} />
->>>>>>> 1e0b9bd46dd3a6d7a97106f3cbf4311dc54ed5fa
                     )}
                 </div>
             </main>

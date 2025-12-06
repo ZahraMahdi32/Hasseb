@@ -1,167 +1,77 @@
+// businessDataRoutes.js
+
 const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 const BusinessData = require("../models/BusinessData");
-const User = require("../models/User");
 const Owner = require("../models/Owner");
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-/* ==========================================
-   UPLOAD BUSINESS DATA (Excel + parsed JSON)
-========================================== */
+// 📌 Upload Business Data
 router.post("/upload", upload.single("file"), async (req, res) => {
   try {
-    // 1) تأكد فيه ملف
-    if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        msg: "No file uploaded"
-      });
+    const { ownerId, parsedData } = req.body;
+
+    if (!ownerId) {
+      return res.status(400).json({ success: false, msg: "ownerId is required" });
     }
 
-    const { username, parsedData } = req.body;
-
-    if (!username || !parsedData) {
-      return res.status(400).json({
-        success: false,
-        msg: "username and parsedData are required"
-      });
-    }
-
-    // 2) parsedData يجي من الفرونت كـ JSON String
-    let data;
-    try {
-      data = JSON.parse(parsedData);
-    } catch (e) {
-      return res.status(400).json({
-        success: false,
-        msg: "Invalid parsedData JSON",
-        error: e.message
-      });
-    }
-
-    // 3) نجيب User عن طريق username
-    const user = await User.findOne({ username });
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        msg: "User not found for this username"
-      });
-    }
-
-    // 4) نجيب Owner عن طريق _id (نفسه في signup)
-    const owner = await Owner.findById(user._id);
+    const owner = await Owner.findById(ownerId);
     if (!owner) {
-      return res.status(404).json({
-        success: false,
-        msg: "Owner record not found for this user"
-      });
+      return res.status(404).json({ success: false, msg: "Owner not found" });
     }
 
-    // 5) نحضر object مطابق للـ BusinessData schema
-    const businessDataPayload = {
-      owner: owner._id,
-      username,
-      businessName: data.businessName || owner.businessName || "My Business",
+    // Parse JSON
+    const data = JSON.parse(parsedData);
+
+    // Create new BusinessData object
+    const newBusinessData = new BusinessData({
+      ownerId,
+      businessName: data.businessName || "My Business",
       products: data.products || [],
       fixedCost: data.fixedCost || 0,
-      cashFlow: data.cashFlow || [],
       pricingScenarios: data.pricingScenarios || [],
+      cashFlow: data.cashFlow || [],
       fileName: req.file.originalname,
       fileSize: req.file.size
-    };
+    });
 
-    if (!businessDataPayload.products || businessDataPayload.products.length === 0) {
-      return res.status(400).json({
-        success: false,
-        msg: "No products found in the data"
-      });
-    }
+    const saved = await newBusinessData.save();
 
-    // 6) نحدّث أو ننشئ BusinessData لهذا الـ owner
-    let updatedData = await BusinessData.findOneAndUpdate(
-      { owner: owner._id },
-      businessDataPayload,
-      { new: true, upsert: true }
-    );
-
-    // 7) نربط BusinessData بالـ Owner
-    owner.businessData = updatedData._id;
+    // 📌 IMPORTANT: Link BusinessData to Owner
+    owner.businessData = saved._id;
     await owner.save();
 
-    return res.status(200).json({
+    return res.json({
       success: true,
-      msg: "Business data uploaded & linked to owner successfully",
-      data: updatedData
+      msg: "Business data uploaded & linked successfully",
+      data: saved
     });
-  } catch (err) {
-    console.error("🔥 Upload error:", err);
-    return res.status(500).json({
-      success: false,
-      msg: "Server error",
-      error: err.message
-    });
+  } catch (error) {
+    console.error("🔥 Upload Error:", error);
+    return res.status(500).json({ success: false, msg: "Server error" });
   }
 });
 
-/* ==========================================
-   GET BUSINESS DATA BY OWNER ID
-========================================== */
-router.get("/by-owner/:ownerId", async (req, res) => {
+// 📌 Get Business Data BY OWNER ID
+router.get("/owner/:ownerId", async (req, res) => {
   try {
-    const { ownerId } = req.params;
+    const owner = await Owner.findById(req.params.ownerId)
+      .populate("businessData");
 
-    const businessData = await BusinessData.findOne({ owner: ownerId });
-    if (!businessData) {
-      return res.status(404).json({
-        success: false,
-        msg: "No business data found for this owner"
-      });
+    if (!owner || !owner.businessData) {
+      return res.status(404).json({ msg: "No business data found for owner" });
     }
 
-    return res.status(200).json({
+    return res.json({
       success: true,
-      data: businessData
+      data: owner.businessData
     });
   } catch (err) {
-    console.error("🔥 Fetch by owner error:", err);
-    return res.status(500).json({
-      success: false,
-      msg: "Server error",
-      error: err.message
-    });
-  }
-});
-
-/* ==========================================
-   GET BUSINESS DATA BY USERNAME (قديم)
-========================================== */
-router.get("/:username", async (req, res) => {
-  try {
-    const { username } = req.params;
-
-    const businessData = await BusinessData.findOne({ username });
-
-    if (!businessData) {
-      return res.status(404).json({
-        success: false,
-        msg: "No business data found for this user"
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      data: businessData
-    });
-  } catch (err) {
-    console.error("🔥 Fetch error:", err);
-    return res.status(500).json({
-      success: false,
-      msg: "Server error",
-      error: err.message
-    });
+    console.error("BusinessData fetch error:", err);
+    res.status(500).json({ msg: "Server error" });
   }
 });
 

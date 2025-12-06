@@ -7,7 +7,6 @@ const Owner = require("../../models/Owner");
 const User = require("../../models/User");
 const BusinessData = require("../../models/BusinessData");
 
-const Ticket = require("../../models/advisorModels/Ticket");
 const Feedback = require("../../models/advisorModels/Feedback");
 const Recommendation = require("../../models/advisorModels/Recommendation");
 const Notification = require("../../models/advisorModels/Notification");
@@ -27,7 +26,9 @@ router.get("/dashboard/:advisorId", async (req, res) => {
     /* ---------------------------------------
        1) GET OWNERS LINKED TO THIS ADVISOR
     ----------------------------------------*/
-    const owners = await Owner.find({ advisor: advisorId }).lean();
+const owners = await Owner.find({ advisor: advisorId })
+  .populate("businessData") 
+  .lean();
 
     /* ---------------------------------------
        2) GET THEIR USERNAMES
@@ -64,7 +65,6 @@ router.get("/dashboard/:advisorId", async (req, res) => {
     /* ---------------------------------------
        4) GET EXTRA ADVISOR DATA 
     ----------------------------------------*/
-    const tickets = await Ticket.find({ advisorId }).sort({ createdAt: -1 });
     const feedback = await Feedback.find({ advisorId }).sort({ createdAt: -1 });
 
     /* ---------------------------------------
@@ -101,12 +101,89 @@ router.get("/dashboard/:advisorId", async (req, res) => {
     return res.json({
       advisor,
       owners: ownersWithData,
-      tickets,
       feedback,
       riskData
     });
   } catch (err) {
     console.error("Dashboard error:", err);
+    return res.status(500).json({ msg: "Server error", error: err.message });
+  }
+});
+/* ======================================================
+   ADD GET EDIT DELETE FEEDBACK
+====================================================== */
+router.post("/feedback", async (req, res) => {
+  try {
+    const { advisorId, ownerId, content } = req.body;
+
+    if (!advisorId || !ownerId || !content.trim()) {
+      return res.status(400).json({ msg: "Missing required fields" });
+    }
+
+    const fb = await Feedback.create({
+      advisorId,
+      ownerId,
+      content
+    });
+
+    return res.json({
+      success: true,
+      msg: "Feedback added successfully",
+      feedback: fb
+    });
+  } catch (err) {
+    console.error("Feedback error:", err);
+    return res.status(500).json({ msg: "Server error", error: err.message });
+  }
+});
+console.log("FEEDBACK FROM DB:", Feedback);
+
+router.get("/feedback/all/:advisorId", async (req, res) => {
+  try {
+    const list = await Feedback.find({
+      advisorId: req.params.advisorId,
+    }).sort({ createdAt: -1 });
+
+    return res.json(list);
+  } catch (err) {
+    return res.status(500).json({ msg: "Server error", error: err.message });
+  }
+});
+router.delete("/feedback/:id", async (req, res) => {
+  try {
+    const deleted = await Feedback.findByIdAndDelete(req.params.id);
+
+    if (!deleted) {
+      return res.status(404).json({ msg: "Feedback not found" });
+    }
+
+    return res.json({ msg: "Feedback deleted", deleted });
+  } catch (err) {
+    return res.status(500).json({ msg: "Server error", error: err.message });
+  }
+});
+
+router.put("/feedback/:id", async (req, res) => {
+  try {
+    const { content } = req.body;
+
+    if (!content || !content.trim()) {
+      return res.status(400).json({ msg: "Content is required" });
+    }
+
+    const updated = await Feedback.findByIdAndUpdate(
+      req.params.id,
+      { content },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ msg: "Feedback not found" });
+    }
+
+    return res.json(updated);
+  } catch (err) {
+    console.error("UPDATE FEEDBACK ERROR:", err);
     return res.status(500).json({ msg: "Server error", error: err.message });
   }
 });

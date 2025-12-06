@@ -1,9 +1,4 @@
-<<<<<<< HEAD
-import React from "react";
-import axios from "axios";
-=======
 import React, { useState, useEffect } from "react";
->>>>>>> 1e0b9bd46dd3a6d7a97106f3cbf4311dc54ed5fa
 import { generateDashboardInsights } from "./InsightEngine";
 import "./OwnerDashboardPanel.css"; 
 const TICKETS_API_URL = "http://localhost:5001/api/tickets";
@@ -29,14 +24,12 @@ export default function Dashboard({ baseData }) {
         const rows = [];
 
         rows.push(["Metric", "Value"]);
+
         rows.push(["Health Score", healthScore]);
         rows.push(["Real Burn Rate", cashInsights.realBurnRate]);
 
         bepInsights.forEach((b) => {
-            rows.push([
-                `BEP - ${b.product}`,
-                b.issue ? "Not profitable" : `${b.breakEvenUnits} units`
-            ]);
+            rows.push([`BEP - ${b.product}`, b.issue ? "Not profitable" : `${b.breakEvenUnits} units`]);
         });
 
         pricingInsights.forEach((p) => {
@@ -58,42 +51,8 @@ export default function Dashboard({ baseData }) {
     }
 
     // -------------------------
-    // REAL SHARE WITH ADVISOR
+    // SHARE (mock)
     // -------------------------
-<<<<<<< HEAD
-    const handleShareAdvisor = async () => {
-        try {
-            const owner = JSON.parse(localStorage.getItem("loggedUser"));
-            const ownerId = owner?.ownerId;
-            const advisorId = owner?.advisorId;
-
-            if (!ownerId) {
-                alert("Owner information missing.");
-                return;
-            }
-
-            if (!advisorId) {
-                alert("No advisor assigned to your account.");
-                return;
-            }
-
-            const res = await axios.post("http://localhost:5001/api/owner/share", {
-                ownerId,
-                advisorId
-            });
-
-            if (res.data.success) {
-                alert("Your business data has been shared with your advisor!");
-            } else {
-                alert("Something went wrong. Could not share data.");
-            }
-
-        } catch (err) {
-            console.error(err);
-            alert("Error sharing data with advisor.");
-        }
-    };
-=======
  async function handleShareWithAdvisor() {
     try {
       setShareLoading(true);
@@ -146,7 +105,6 @@ ${topRecs || "No recommendations generated."}
       setShareLoading(false);
     }
   }
->>>>>>> 1e0b9bd46dd3a6d7a97106f3cbf4311dc54ed5fa
 
   return (
     <div className="dashboard-container">

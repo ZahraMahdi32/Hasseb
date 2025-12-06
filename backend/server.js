@@ -11,7 +11,6 @@ const connectDB = require("./src/config/db");
 const userRoutes = require("./src/routes/userRoutes");
 const businessDataRoutes = require("./src/routes/businessDataRoutes");
 const advisorRoute = require("./src/routes/advisorRoutes/advisorRoute");
-const advisorTicketRoutes = require("./src/routes/advisorRoutes/advisorTicketRoutes");
 const ownerAdvisorRoutes = require("./src/routes/advisorRoutes/ownerAdvisorRoutes");
 const ownerRoutes = require("./src/routes/OwnerRoutes");
 const scenarioRoutes = require("./src/routes/scenarioRoutes");   // ⭐ ADD THIS
@@ -38,10 +37,10 @@ app.get("/", (req, res) => {
 app.use("/api/users", userRoutes);
 app.use("/api/business-data", businessDataRoutes);
 app.use("/api/advisor", advisorRoute);
-app.use("/api/advisor", advisorTicketRoutes);
 app.use("/api/link", ownerAdvisorRoutes);
 app.use("/api/owner", ownerRoutes);
-app.use("/api/pricing-scenarios", scenarioRoutes);    
+app.use("/api/pricing-scenarios", scenarioRoutes); 
+app.use("/api/tickets", require("./src/routes/ManagerRoutes/TicketRoutes"));
 
 // ===============================
 //  START SERVER

@@ -1,14 +1,13 @@
 import React from "react";
-import { 
-  FiTrendingUp,
+import {
   FiHome,
   FiMessageCircle,
   FiBarChart2,
   FiUser,
   FiBell,
-  FiHelpCircle,
-  FiStar
+  FiHelpCircle
 } from "react-icons/fi";
+import "../../SharedStyles/Layout.css"
 
 /* ============================
         HEADER
@@ -18,7 +17,8 @@ export function Header({ theme, onOpenMenu }) {
     if (theme === "system") {
       const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
       document.body.setAttribute("data-theme", prefersDark ? "dark" : "light");
-    } else {
+    } 
+    else {
       document.body.setAttribute("data-theme", theme);
     }
   }, [theme]);
@@ -37,7 +37,6 @@ export function Header({ theme, onOpenMenu }) {
     </nav>
   );
 }
-
 /* ============================
         SIDEBAR
 =============================== */
@@ -47,7 +46,6 @@ export function Sidebar({ tab, setTab, isOpen, onClose, onLogout }) {
     { id: "dashboard", label: "Dashboard", icon: <FiHome /> },
     { id: "feedback", label: "Feedback", icon: <FiMessageCircle /> },
     { id: "analyzer", label: "Analyzer", icon: <FiBarChart2 /> },
-    { id: "recommendations", label: "Recommendations", icon: <FiStar /> },   // ⭐ NEW TAB
   ];
 
   return (
@@ -73,9 +71,6 @@ export function Sidebar({ tab, setTab, isOpen, onClose, onLogout }) {
               alt="Haseeb Logo"
               className="sidebar-logo-img"
             />
-            <div className="sidebar-neo__logo">
-              <FiTrendingUp size={20} color="#fff" />
-            </div>
           </div>
         </div>
 
@@ -102,6 +97,19 @@ export function Sidebar({ tab, setTab, isOpen, onClose, onLogout }) {
             })}
           </nav>
 
+          {/* SUPPORT LINK */}
+          <div
+              className="px-3 py-2 small text-muted"
+              style={{ cursor: "pointer" }}
+              onClick={() => {
+                setTab("support");
+                onClose();
+              }}
+          >
+            For Help & Support
+          </div>
+        </div>
+
           {/* DOCK AREA */}
           <div className="sidebar-neo__dock">
             <button
@@ -125,24 +133,12 @@ export function Sidebar({ tab, setTab, isOpen, onClose, onLogout }) {
             </button>
           </div>
 
-          {/* SUPPORT LINK */}
-          <div
-            className="px-3 py-2 small text-muted"
-            style={{ cursor: "pointer" }}
-            onClick={() => {
-              setTab("support");
-              onClose();
-            }}
-          >
-            For Help & Support
-          </div>
-        </div>
 
         {/* LOGOUT */}
         <button
-          className="sidebar-nav-item sidebar-nav-item--logout"
-          onClick={onLogout}
-        >
+          className="sidebar-neo__logout"
+          onClick={onLogout}>
+
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" strokeWidth="2">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>

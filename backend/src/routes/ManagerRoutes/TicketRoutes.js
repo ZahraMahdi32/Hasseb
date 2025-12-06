@@ -4,6 +4,7 @@ const router = express.Router();
 
 const Ticket = require("../../models/Ticket");
 const User = require("../../models/User");
+console.log("TicketRoutes loaded SUCCESSFULLY");
 
 /**
  * Helper to shape a ticket for the frontend
@@ -195,6 +196,32 @@ router.post("/:id/reply", async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 });
+/**
+ * DELETE /api/tickets/:id
+ * Delete a ticket from the database only
+ */
+router.delete("/:id", async (req, res) => {
+  try {
+    const ticketId = req.params.id;
+
+    const deleted = await Ticket.findByIdAndDelete(ticketId);
+
+    if (!deleted) {
+      return res.status(404).json({ message: "Ticket not found." });
+    }
+
+    return res.json({
+      success: true,
+      message: "Ticket deleted successfully from the database.",
+      deletedTicket: deleted
+    });
+
+  } catch (err) {
+    console.error("DELETE /api/tickets/:id error:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+});
+
 
 module.exports = router;
 
