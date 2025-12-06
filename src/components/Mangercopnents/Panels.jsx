@@ -20,6 +20,7 @@ import {
   statusBadgeClass,
   initialsOf,
 } from "../../information";
+import axios from "axios";
 
 import {
   ResponsiveContainer,
@@ -506,52 +507,38 @@ export function UsersPanel({ users, setUsers, query, setQuery }) {
 
 /* SETTINGS  */
 export function SettingsPanel({ settings, setSettings, users = [] }) {
-  // --------- Helpers ---------
-  function makeInitial(s) {
-    const base = s || {};
-
+  // ========== HELPERS FOR NOTIFICATIONS ==========
+  function makeInitialNotifications(base) {
+    const b = base || {};
     return {
-      // advisor-owner pairs
-      assignments: Array.isArray(base.assignments) ? base.assignments : [],
-
-      // notification switches
-      notifications: {
-        emailAlerts:
-          base.notifications && typeof base.notifications.emailAlerts === "boolean"
-            ? base.notifications.emailAlerts
-            : false,
-        ticketBadge:
-          base.notifications && typeof base.notifications.ticketBadge === "boolean"
-            ? base.notifications.ticketBadge
-            : false,
-        push:
-          base.notifications && typeof base.notifications.push === "boolean"
-            ? base.notifications.push
-            : false,
-      },
+      emailAlerts:
+        b.notifications && typeof b.notifications.emailAlerts === "boolean"
+          ? b.notifications.emailAlerts
+          : false,
+      ticketBadge:
+        b.notifications && typeof b.notifications.ticketBadge === "boolean"
+          ? b.notifications.ticketBadge
+          : false,
+      push:
+        b.notifications && typeof b.notifications.push === "boolean"
+          ? b.notifications.push
+          : false,
     };
   }
 
-  const [draft, setDraft] = useState(makeInitial(settings));
+  // 🔹 assignments live in DB; we keep them in state here
+  const [assignments, setAssignments] = useState([]); // [{_id, advisorId, ownerId}, ...]
+  const [notifications, setNotifications] = useState(makeInitialNotifications(settings));
 
-  // when parent settings change
-  useEffect(() => {
-    setDraft(makeInitial(settings));
-  }, [settings]);
-
-  // pull advisors & owners from users prop
+  // pull advisors & owners from users prop (same as before)
   const advisors = (users || []).filter((u) => u.role === "advisor");
   const owners = (users || []).filter((u) => u.role === "owner");
 
   // local selects for new assignment
-  const [selectedAdvisorId, setSelectedAdvisorId] = useState(
-    advisors[0]?.id || ""
-  );
-  const [selectedOwnerId, setSelectedOwnerId] = useState(
-    owners[0]?.id || ""
-  );
+  const [selectedAdvisorId, setSelectedAdvisorId] = useState(advisors[0]?.id || "");
+  const [selectedOwnerId, setSelectedOwnerId] = useState(owners[0]?.id || "");
 
-  // ensure selects stay valid when users change
+  // keep selects valid when users change
   useEffect(() => {
     if (!advisors.find((a) => a.id === selectedAdvisorId)) {
       setSelectedAdvisorId(advisors[0]?.id || "");
@@ -561,13 +548,40 @@ export function SettingsPanel({ settings, setSettings, users = [] }) {
     }
   }, [advisors, owners]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // --------- Assignment actions ---------
-  function addAssignment(e) {
+  // ========== LOAD ASSIGNMENTS FROM BACKEND ONCE ==========
+  useEffect(() => {
+    async function loadAssignments() {
+      try {
+        const res = await axios.get("http://localhost:5001/api/assignments");
+        // map to simple shape
+        const list = (res.data || []).map((a) => ({
+          _id: a._id,
+          advisorId: String(a.advisorId),
+          ownerId: String(a.ownerId),
+        }));
+        setAssignments(list);
+
+        // also push into parent settings so other parts can use it if needed
+        setSettings({
+          assignments: list,
+          notifications,
+        });
+      } catch (err) {
+        console.error("Failed to load assignments:", err);
+      }
+    }
+
+    loadAssignments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ========== ASSIGN / REMOVE ==========
+  async function addAssignment(e) {
     e.preventDefault();
     if (!selectedAdvisorId || !selectedOwnerId) return;
 
-    // prevent duplicates
-    const exists = (draft.assignments || []).some(
+    // prevent duplicate in UI
+    const exists = assignments.some(
       (a) =>
         a.advisorId === selectedAdvisorId && a.ownerId === selectedOwnerId
     );
@@ -576,54 +590,70 @@ export function SettingsPanel({ settings, setSettings, users = [] }) {
       return;
     }
 
-    const nextAssignments = [
-      ...(draft.assignments || []),
-      { advisorId: selectedAdvisorId, ownerId: selectedOwnerId },
-    ];
+    try {
+      const res = await axios.post("http://localhost:5001/api/assignments", {
+        advisorId: selectedAdvisorId,
+        ownerId: selectedOwnerId,
+      });
 
-    const nextDraft = { ...draft, assignments: nextAssignments };
-    setDraft(nextDraft);
+      const saved = res.data;
+      const toAdd = {
+        _id: saved._id,
+        advisorId: String(saved.advisorId),
+        ownerId: String(saved.ownerId),
+      };
 
-    // 👇 IMPORTANT: your setSettings expects a plain object
-    setSettings({
-      assignments: nextAssignments,
-      notifications: nextDraft.notifications,
-    });
+      const next = [toAdd, ...assignments];
+      setAssignments(next);
+
+      setSettings({
+        assignments: next,
+        notifications,
+      });
+    } catch (err) {
+      console.error("Assign owner error:", err);
+      alert("Failed to assign owner. Check backend logs.");
+    }
   }
 
-  function removeAssignment(advisorId, ownerId) {
-    const nextAssignments = (draft.assignments || []).filter(
-      (a) => !(a.advisorId === advisorId && a.ownerId === ownerId)
-    );
+  async function removeAssignment(assignmentId) {
+    try {
+      await axios.delete(
+        `http://localhost:5001/api/assignments/${assignmentId}`
+      );
 
-    const nextDraft = { ...draft, assignments: nextAssignments };
-    setDraft(nextDraft);
+      const next = assignments.filter((a) => a._id !== assignmentId);
+      setAssignments(next);
 
-    setSettings({
-      assignments: nextAssignments,
-      notifications: nextDraft.notifications,
-    });
+      setSettings({
+        assignments: next,
+        notifications,
+      });
+    } catch (err) {
+      console.error("Remove assignment error:", err);
+      alert("Failed to remove assignment.");
+    }
   }
 
-  // --------- Save notifications only ---------
+  // ========== SAVE NOTIFICATIONS ONLY ==========
   function save() {
-    const clean = {
-      assignments: draft.assignments || [],
-      notifications: {
-        emailAlerts: !!(draft.notifications && draft.notifications.emailAlerts),
-        ticketBadge: !!(draft.notifications && draft.notifications.ticketBadge),
-        push: !!(draft.notifications && draft.notifications.push),
-      },
+    const cleanNotifications = {
+      emailAlerts: !!notifications.emailAlerts,
+      ticketBadge: !!notifications.ticketBadge,
+      push: !!notifications.push,
     };
 
-    // again: plain object, not callback
-    setSettings(clean);
+    setNotifications(cleanNotifications);
+
+    setSettings({
+      assignments,
+      notifications: cleanNotifications,
+    });
+
     alert("Settings saved successfully!");
   }
 
-  // --------- SUMMARY CALCULATIONS ---------
-  const assignments = draft.assignments || [];
-
+  // ========== SUMMARY CALCULATIONS ==========
   const assignedOwnerIds = new Set(assignments.map((a) => a.ownerId));
   const assignedOwnersCount = assignedOwnerIds.size;
 
@@ -639,6 +669,7 @@ export function SettingsPanel({ settings, setSettings, users = [] }) {
       ? (assignedOwnersCount / advisors.length).toFixed(1)
       : 0;
 
+  // ========== RENDER ==========
   return (
     <div className="row g-3">
       {/* LEFT COLUMN: Assignments + Notifications */}
@@ -710,13 +741,13 @@ export function SettingsPanel({ settings, setSettings, users = [] }) {
               </div>
             ) : (
               <ul className="list-group small">
-                {assignments.map((a, idx) => {
+                {assignments.map((a) => {
                   const adv = advisors.find((x) => x.id === a.advisorId);
                   const own = owners.find((x) => x.id === a.ownerId);
                   if (!adv || !own) return null;
                   return (
                     <li
-                      key={idx}
+                      key={a._id}
                       className="list-group-item d-flex justify-content-between align-items-center"
                     >
                       <span>
@@ -725,9 +756,7 @@ export function SettingsPanel({ settings, setSettings, users = [] }) {
                       <button
                         type="button"
                         className="btn btn-sm btn-outline-danger"
-                        onClick={() =>
-                          removeAssignment(a.advisorId, a.ownerId)
-                        }
+                        onClick={() => removeAssignment(a._id)}
                       >
                         Remove
                       </button>
@@ -749,18 +778,13 @@ export function SettingsPanel({ settings, setSettings, users = [] }) {
                 id="n1"
                 className="form-check-input"
                 type="checkbox"
-                checked={
-                  draft.notifications && draft.notifications.emailAlerts
-                    ? draft.notifications.emailAlerts
-                    : false
+                checked={notifications.emailAlerts}
+                onChange={(e) =>
+                  setNotifications((n) => ({
+                    ...n,
+                    emailAlerts: e.target.checked,
+                  }))
                 }
-                onChange={(e) => {
-                  const copy = { ...draft };
-                  const notif = { ...(copy.notifications || {}) };
-                  notif.emailAlerts = e.target.checked;
-                  copy.notifications = notif;
-                  setDraft(copy);
-                }}
               />
               <label htmlFor="n1" className="form-check-label">
                 Email Alerts
@@ -772,18 +796,13 @@ export function SettingsPanel({ settings, setSettings, users = [] }) {
                 id="n2"
                 className="form-check-input"
                 type="checkbox"
-                checked={
-                  draft.notifications && draft.notifications.ticketBadge
-                    ? draft.notifications.ticketBadge
-                    : false
+                checked={notifications.ticketBadge}
+                onChange={(e) =>
+                  setNotifications((n) => ({
+                    ...n,
+                    ticketBadge: e.target.checked,
+                  }))
                 }
-                onChange={(e) => {
-                  const copy = { ...draft };
-                  const notif = { ...(copy.notifications || {}) };
-                  notif.ticketBadge = e.target.checked;
-                  copy.notifications = notif;
-                  setDraft(copy);
-                }}
               />
               <label htmlFor="n2" className="form-check-label">
                 Ticket Badge Counter
@@ -795,18 +814,13 @@ export function SettingsPanel({ settings, setSettings, users = [] }) {
                 id="n3"
                 className="form-check-input"
                 type="checkbox"
-                checked={
-                  draft.notifications && draft.notifications.push
-                    ? draft.notifications.push
-                    : false
+                checked={notifications.push}
+                onChange={(e) =>
+                  setNotifications((n) => ({
+                    ...n,
+                    push: e.target.checked,
+                  }))
                 }
-                onChange={(e) => {
-                  const copy = { ...draft };
-                  const notif = { ...(copy.notifications || {}) };
-                  notif.push = e.target.checked;
-                  copy.notifications = notif;
-                  setDraft(copy);
-                }}
               />
               <label htmlFor="n3" className="form-check-label">
                 Push Notifications
@@ -901,8 +915,6 @@ export function SettingsPanel({ settings, setSettings, users = [] }) {
     </div>
   );
 }
-
-
 
 /*  ANALYTICS  */
 export function AnalyticsPanel({ analytics, users, refresh }) {

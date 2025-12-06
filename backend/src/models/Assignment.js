@@ -1,37 +1,21 @@
 const mongoose = require("mongoose");
 
-const AssignmentSchema = new mongoose.Schema(
+const assignmentSchema = new mongoose.Schema(
   {
-    manager: {
+    advisorId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true
+      required: true,
     },
-
-    owner: {
+    ownerId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Owner",
-      required: true
+      ref: "User",
+      required: true,
     },
-
-    advisor: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Advisor",
-      required: true
-    },
-
-    notes: {
-      type: String,
-      default: ""
-    },
-
-    status: {
-      type: String,
-      enum: ["assigned", "active", "completed"],
-      default: "assigned"
-    }
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Assignment", AssignmentSchema);
+assignmentSchema.index({ advisorId: 1, ownerId: 1 }, { unique: true });
+
+module.exports = mongoose.model("Assignment", assignmentSchema);

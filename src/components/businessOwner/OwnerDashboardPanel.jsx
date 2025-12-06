@@ -12,6 +12,8 @@ export default function Dashboard({ baseData }) {
     const [shareLoading, setShareLoading] = useState(false);
     const [shareError, setShareError] = useState("");
     const [shareSuccess, setShareSuccess] = useState("");
+    const [shareFile, setShareFile] = useState(null); 
+
 
     // -----------------------------
     // NEW: Fetch businessData

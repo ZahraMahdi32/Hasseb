@@ -1,7 +1,13 @@
-// backend/src/routes/advisorRoutes/advisorRoute.js
+// ======================================================
+// IMPORTS
+// ======================================================
 const express = require("express");
+const path = require("path");
+const multer = require("multer");
+
 const router = express.Router();
 
+// MODELS
 const Advisor = require("../../models/advisorModels/advisor");
 const Owner = require("../../models/Owner");
 const User = require("../../models/User");
@@ -10,12 +16,21 @@ const BusinessData = require("../../models/BusinessData");
 const Feedback = require("../../models/advisorModels/Feedback");
 const Recommendation = require("../../models/advisorModels/Recommendation");
 const Notification = require("../../models/advisorModels/Notification");
+const Assignment = require("../../models/Assignment");
 
+// RISK ENGINE
 const { evaluateOwnerRisk } = require("../../utils/riskEngine");
 
-/* ======================================================
-   CLEAN DASHBOARD — ONLY REAL DATA
-====================================================== */
+// ======================================================
+// DEBUG ROUTE
+// ======================================================
+router.get("/ping", (req, res) => {
+  res.json({ ok: true, route: "/api/advisor" });
+});
+
+// ======================================================
+// DASHBOARD — MERGED VERSION (HEAD + other branch)
+// ======================================================
 router.get("/dashboard/:advisorId", async (req, res) => {
   try {
     const advisorId = req.params.advisorId;
@@ -23,60 +38,39 @@ router.get("/dashboard/:advisorId", async (req, res) => {
     const advisor = await Advisor.findById(advisorId);
     if (!advisor) return res.status(404).json({ msg: "Advisor not found" });
 
-    /* ---------------------------------------
-       1) GET OWNERS LINKED TO THIS ADVISOR
-    ----------------------------------------*/
-const owners = await Owner.find({ advisor: advisorId })
-  .populate("businessData") 
-  .lean();
+    // 1) Owners (from HEAD approach)
+    const owners = await Owner.find({ advisor: advisorId })
+      .populate("businessData")
+      .lean();
 
-    /* ---------------------------------------
-       2) GET THEIR USERNAMES
-    ----------------------------------------*/
+    // 2) Their usernames
     const ownerIds = owners.map((o) => o._id);
-    const users = await User.find(
-      { _id: { $in: ownerIds } },
-      { username: 1 }
-    ).lean();
+    const users = await User.find({ _id: { $in: ownerIds } }, { username: 1 }).lean();
 
     const userById = {};
     users.forEach((u) => (userById[u._id.toString()] = u.username));
 
-    /* ---------------------------------------
-       3) ATTACH BUSINESS DATA FOR EACH OWNER
-    ----------------------------------------*/
+    // 3) Attach business data for each owner
     const ownersWithData = await Promise.all(
       owners.map(async (o) => {
         const username = userById[o._id.toString()];
         let businessData = null;
-
         if (username) {
           businessData = await BusinessData.findOne({ username }).lean();
         }
-
-        return {
-          ...o,
-          username,
-          businessData: businessData || null,
-        };
+        return { ...o, username, businessData };
       })
     );
 
-    /* ---------------------------------------
-       4) GET EXTRA ADVISOR DATA 
-    ----------------------------------------*/
+    // 4) GET FEEDBACK
     const feedback = await Feedback.find({ advisorId }).sort({ createdAt: -1 });
 
-    /* ---------------------------------------
-       5) EVALUATE RISK PER OWNER
-    ----------------------------------------*/
+    // 5) Run risk engine
     const riskData = ownersWithData.map((o) =>
       evaluateOwnerRisk(o.businessData || {})
     );
 
-    /* ---------------------------------------
-       6) AUTO-GENERATED NOTIFICATIONS ONLY
-    ----------------------------------------*/
+    // 6) Auto notifications (keep HEAD version)
     for (const r of riskData) {
       if (r.level === "High") {
         const exists = await Notification.findOne({
@@ -95,67 +89,63 @@ const owners = await Owner.find({ advisor: advisorId })
       }
     }
 
-    /* ---------------------------------------
-       7) FINAL CLEAN RESPONSE
-    ----------------------------------------*/
     return res.json({
       advisor,
       owners: ownersWithData,
       feedback,
-      riskData
+      riskData,
     });
   } catch (err) {
     console.error("Dashboard error:", err);
     return res.status(500).json({ msg: "Server error", error: err.message });
   }
 });
-/* ======================================================
-   ADD GET EDIT DELETE FEEDBACK
-====================================================== */
+
+// ======================================================
+// FEEDBACK — ADD
+// ======================================================
 router.post("/feedback", async (req, res) => {
   try {
     const { advisorId, ownerId, content } = req.body;
 
-    if (!advisorId || !ownerId || !content.trim()) {
+    if (!advisorId || !ownerId || !content?.trim()) {
       return res.status(400).json({ msg: "Missing required fields" });
     }
 
-    const fb = await Feedback.create({
-      advisorId,
-      ownerId,
-      content
-    });
+    const fb = await Feedback.create({ advisorId, ownerId, content });
 
     return res.json({
       success: true,
       msg: "Feedback added successfully",
-      feedback: fb
+      feedback: fb,
     });
   } catch (err) {
     console.error("Feedback error:", err);
     return res.status(500).json({ msg: "Server error", error: err.message });
   }
 });
-console.log("FEEDBACK FROM DB:", Feedback);
 
+// ======================================================
+// FEEDBACK — GET ALL
+// ======================================================
 router.get("/feedback/all/:advisorId", async (req, res) => {
   try {
-    const list = await Feedback.find({
-      advisorId: req.params.advisorId,
-    }).sort({ createdAt: -1 });
+    const advisorId = req.params.advisorId;
 
+    const list = await Feedback.find({ advisorId }).sort({ createdAt: -1 });
     return res.json(list);
   } catch (err) {
     return res.status(500).json({ msg: "Server error", error: err.message });
   }
 });
+
+// ======================================================
+// FEEDBACK — DELETE
+// ======================================================
 router.delete("/feedback/:id", async (req, res) => {
   try {
     const deleted = await Feedback.findByIdAndDelete(req.params.id);
-
-    if (!deleted) {
-      return res.status(404).json({ msg: "Feedback not found" });
-    }
+    if (!deleted) return res.status(404).json({ msg: "Feedback not found" });
 
     return res.json({ msg: "Feedback deleted", deleted });
   } catch (err) {
@@ -163,11 +153,14 @@ router.delete("/feedback/:id", async (req, res) => {
   }
 });
 
+// ======================================================
+// FEEDBACK — UPDATE
+// ======================================================
 router.put("/feedback/:id", async (req, res) => {
   try {
     const { content } = req.body;
 
-    if (!content || !content.trim()) {
+    if (!content?.trim()) {
       return res.status(400).json({ msg: "Content is required" });
     }
 
@@ -177,75 +170,100 @@ router.put("/feedback/:id", async (req, res) => {
       { new: true }
     );
 
-    if (!updated) {
-      return res.status(404).json({ msg: "Feedback not found" });
-    }
+    if (!updated) return res.status(404).json({ msg: "Feedback not found" });
 
     return res.json(updated);
   } catch (err) {
-    console.error("UPDATE FEEDBACK ERROR:", err);
     return res.status(500).json({ msg: "Server error", error: err.message });
   }
 });
 
-/* ======================================================
-   ADVISOR — GET ALL TICKETS
-====================================================== */
-router.get("/tickets/:advisorId", async (req, res) => {
+// ======================================================
+// SUGGESTIONS — ADD
+// ======================================================
+router.post("/suggestions", async (req, res) => {
   try {
-    const advisorId = req.params.advisorId;
+    const { advisorId, ownerId, suggestion } = req.body;
 
-    const tickets = await Assignment.find({ advisorId })
-      .sort({ createdAt: -1 });
+    if (!advisorId || !ownerId || !suggestion) {
+      return res.status(400).json({ msg: "Missing fields" });
+    }
 
-    return res.json(tickets);
+    const rec = await Recommendation.create({
+      advisorId,
+      ownerId,
+      suggestion,
+    });
+
+    return res.status(201).json(rec);
   } catch (err) {
-    console.error("GET tickets error:", err);
-    return res.status(500).json({ msg: "Server error", error: err.message });
+    console.error("Suggestion error:", err);
+    return res.status(500).json({ msg: "Server error" });
   }
 });
 
-/* ======================================================
-   ADVISOR — GET NOTIFICATIONS
-====================================================== */
+// ======================================================
+// SUGGESTIONS — GET FOR OWNER
+// ======================================================
+router.get("/suggestions/:ownerId", async (req, res) => {
+  try {
+    const list = await Recommendation.find({
+      ownerId: req.params.ownerId,
+    }).sort({ createdAt: -1 });
+
+    return res.json(list);
+  } catch (err) {
+    console.error("Suggestions error:", err);
+    return res.status(500).json({ msg: "Server error" });
+  }
+});
+
+// ======================================================
+// NOTIFICATIONS (ADD)
+// ======================================================
+router.post("/notifications", async (req, res) => {
+  try {
+    const { advisorId, title, message } = req.body;
+
+    if (!advisorId || !title || !message) {
+      return res.status(400).json({ msg: "Missing fields" });
+    }
+
+    const notif = await Notification.create({
+      advisorId,
+      title,
+      message,
+    });
+
+    return res.status(201).json(notif);
+  } catch (err) {
+    console.error("Notification create error:", err);
+    return res.status(500).json({ msg: "Server error" });
+  }
+});
+
+// ======================================================
+// NOTIFICATIONS — GET
+// ======================================================
 router.get("/notifications/:advisorId", async (req, res) => {
   try {
-    const advisorId = req.params.advisorId;
-
-    const list = await Notification.find({ advisorId })
+    const list = await Notification.find({ advisorId: req.params.advisorId })
       .sort({ createdAt: -1 });
 
     return res.json(list);
   } catch (err) {
     console.error("GET notifications error:", err);
-    return res.status(500).json({ msg: "Server error", error: err.message });
-  }
-});
-
-/* ======================================================
-   ADVISOR — GET FEEDBACK LIST (short route)
-====================================================== */
-router.get("/feedback/:advisorId", async (req, res) => {
-  try {
-    const list = await Feedback.find({ advisorId: req.params.advisorId })
-      .sort({ createdAt: -1 });
-
-    return res.json(list);
-  } catch (err) {
-    console.error("GET feedback error:", err);
-    return res.status(500).json({ msg: "Server error", error: err.message });
+    return res.status(500).json({ msg: "Server error" });
   }
 });
 
 // ======================================================
-// GET OWNERS LINKED TO AN ADVISOR
+// OWNERS LINKED TO ADVISOR
 // ======================================================
 router.get("/owners/:advisorId", async (req, res) => {
   try {
-    const advisorId = req.params.advisorId;
-
-    const owners = await Owner.find({ advisor: advisorId })
-      .select("_id fullName username")   // فقط اللي تحتاجينه
+    const owners = await Owner.find({ advisor: req.params.advisorId })
+      .select("_id fullName username")
       .lean();
 
     return res.json({ success: true, owners });
@@ -254,9 +272,10 @@ router.get("/owners/:advisorId", async (req, res) => {
     return res.status(500).json({ msg: "Server error", error: err.message });
   }
 });
-/* ======================================================
-   ADD RECOMMENDATION
-====================================================== */
+
+// ======================================================
+// RECOMMENDATION — ADD
+// ======================================================
 router.post("/recommendations", async (req, res) => {
   try {
     const { advisorId, ownerId, text } = req.body;
@@ -268,19 +287,19 @@ router.post("/recommendations", async (req, res) => {
     const newRec = await Recommendation.create({
       advisorId,
       ownerId,
-      text
+      text,
     });
 
     return res.json({ success: true, recommendation: newRec });
   } catch (err) {
     console.error("Recommendation error:", err);
-    res.status(500).json({ msg: "Server error", error: err.message });
+    return res.status(500).json({ msg: "Server error", error: err.message });
   }
 });
 
-/* ======================================================
-   GET RECOMMENDATIONS
-====================================================== */
+// ======================================================
+// RECOMMENDATION — GET
+// ======================================================
 router.get("/recommendations/:advisorId", async (req, res) => {
   try {
     const list = await Recommendation.find({
@@ -290,9 +309,50 @@ router.get("/recommendations/:advisorId", async (req, res) => {
     return res.json(list);
   } catch (err) {
     console.error("Get recommendations error:", err);
-    res.status(500).json({ msg: "Server error", error: err.message });
+    return res.status(500).json({ msg: "Server error", error: err.message });
   }
 });
 
+// ======================================================
+// UPLOAD FEEDBACK FILE
+// ======================================================
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, path.join(__dirname, "..", "..", "uploads", "feedback"));
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + "-" + file.originalname);
+  },
+});
+
+const upload = multer({ storage });
+
+router.post("/feedback/file", upload.single("file"), async (req, res) => {
+  try {
+    const { advisorId, ownerId } = req.body;
+
+    if (!advisorId || !ownerId) {
+      return res.status(400).json({ message: "advisorId and ownerId are required" });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    const fileUrl = `/uploads/feedback/${req.file.filename}`;
+
+    const fb = await Feedback.create({
+      advisorId,
+      ownerId,
+      fileUrl,
+      content: "",
+    });
+
+    return res.status(201).json(fb);
+  } catch (err) {
+    console.error("FILE FEEDBACK ERROR:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+});
 
 module.exports = router;

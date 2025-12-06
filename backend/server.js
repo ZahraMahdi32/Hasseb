@@ -6,6 +6,7 @@ require("dotenv").config({ path: __dirname + "/.env" });
 const express = require("express");
 const cors = require("cors");
 const connectDB = require("./src/config/db");
+const path = require("path");
 
 // Core routes
 const userRoutes = require("./src/routes/userRoutes");
@@ -13,8 +14,13 @@ const businessDataRoutes = require("./src/routes/businessDataRoutes");
 const advisorRoute = require("./src/routes/advisorRoutes/advisorRoute");
 const ownerAdvisorRoutes = require("./src/routes/advisorRoutes/ownerAdvisorRoutes");
 const ownerRoutes = require("./src/routes/OwnerRoutes");
+
+// Manager-level routes (merged)
 const scenarioRoutes = require("./src/routes/scenarioRoutes");
-const assignmentRoutes = require("./src/routes/ManagerRoutes/AssignmentRoutes"); 
+const managerUserRoutes = require("./src/routes/ManagerRoutes/User");
+const ticketRoutes = require("./src/routes/ManagerRoutes/TicketRoutes");
+const assignmentRoutes = require("./src/routes/ManagerRoutes/AssignmentRoutes");
+
 // ===============================
 //  CONFIG
 // ===============================
@@ -34,14 +40,27 @@ app.get("/", (req, res) => {
 // ===============================
 //  ROUTES
 // ===============================
+
+// Advisors / Owners
 app.use("/api/users", userRoutes);
 app.use("/api/business-data", businessDataRoutes);
 app.use("/api/advisor", advisorRoute);
 app.use("/api/link", ownerAdvisorRoutes);
 app.use("/api/owner", ownerRoutes);
+
+// Scenarios
 app.use("/api/pricing-scenarios", scenarioRoutes);
-app.use("/api/tickets", require("./src/routes/ManagerRoutes/TicketRoutes"));
-app.use("/api/assignments", assignmentRoutes); // ⭐ FIXED
+
+// Manager routes (merged cleanly)
+app.use("/api/manager/users", managerUserRoutes);
+app.use("/api/tickets", ticketRoutes);
+app.use("/api/assignments", assignmentRoutes);
+
+// Serve uploaded files if needed
+app.use(
+  "/uploads",
+  express.static(path.join(__dirname, "src", "uploads"))
+);
 
 // ===============================
 //  START SERVER

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { FiEye, FiTrash2, FiDownload, FiArrowLeft, FiEdit2 } from "react-icons/fi";
 
 export default function FeedbackPanel({
   feedback = [],
@@ -7,10 +8,9 @@ export default function FeedbackPanel({
   fetchFeedback,
   setTab,
   advisorId,
-  owners=[],     
-  prevTab   
+  owners = [],
+  prevTab
 }) {
-
   const [items, setItems] = useState([]);
   const [ownerId, setOwnerId] = useState("");
   const [content, setContent] = useState("");
@@ -20,31 +20,29 @@ export default function FeedbackPanel({
   const [editText, setEditText] = useState("");
   const [showEdit, setShowEdit] = useState(false);
 
+  // load feedback list
   useEffect(() => {
     setItems(feedback);
   }, [feedback]);
 
+  // ADD FEEDBACK
   const addFeedback = async () => {
     if (!ownerId || !content.trim()) return;
+
     setSending(true);
     try {
-      const res = await axios.post(
-        "http://localhost:5001/api/advisor/feedback",
-        {
-          advisorId,
-          ownerId,
-          content,
-        }
-      );
+      const res = await axios.post("http://localhost:5001/api/advisor/feedback", {
+        advisorId,
+        ownerId,
+        content,
+      });
+
       const fb = res.data?.feedback || res.data;
-      if (fb) {
-        setItems((prev) => [fb, ...prev]);
-        if (setFeedback) setFeedback((prev) => [fb, ...prev]);
-      } else if (fetchFeedback) {
-        fetchFeedback();
-      }
+
+      setItems((prev) => [fb, ...prev]);
+      if (setFeedback) setFeedback((prev) => [fb, ...prev]);
+
       setContent("");
-      setOwnerId("");
     } catch (err) {
       console.error("Error adding feedback", err);
     } finally {
@@ -52,28 +50,24 @@ export default function FeedbackPanel({
     }
   };
 
+  // EDIT
   const startEdit = (item) => {
     setActive(item._id);
     setEditText(item.content);
     setShowEdit(true);
   };
-  <button className="back-btn" onClick={() => setTab(prevTab)}>
-    ← Back
-  </button>
-
-
 
   const saveEdit = async () => {
     if (!editText.trim()) return;
+
     try {
       const res = await axios.put(
         `http://localhost:5001/api/advisor/feedback/${active}`,
-        {
-          advisorId,
-          content: editText,
-        }
+        { advisorId, content: editText }
       );
+
       const updated = res.data?.feedback || res.data;
+
       setItems((prev) =>
         prev.map((it) => (it._id === active ? updated : it))
       );
@@ -82,6 +76,7 @@ export default function FeedbackPanel({
           prev.map((it) => (it._id === active ? updated : it))
         );
       }
+
       setShowEdit(false);
       setActive(null);
       setEditText("");
@@ -90,14 +85,10 @@ export default function FeedbackPanel({
     }
   };
 
+  // DELETE FEEDBACK
   const deleteFeedback = async (id) => {
     try {
-      await axios.delete(
-        `http://localhost:5001/api/advisor/feedback/${id}`,
-        {
-          data: { advisorId },
-        }
-      );
+      await axios.delete(`http://localhost:5001/api/advisor/feedback/${id}`);
       setItems((prev) => prev.filter((it) => it._id !== id));
       if (setFeedback) {
         setFeedback((prev) => prev.filter((it) => it._id !== id));
@@ -115,14 +106,19 @@ export default function FeedbackPanel({
   return (
     <div className="support-container">
       <h1 className="support-title">Feedback</h1>
-      <button className="back-btn" onClick={() => setTab(prevTab)}>← Back</button>
+
+      {/* BACK BUTTON */}
+      <button className="back-btn" onClick={() => setTab(prevTab)}>
+        <FiArrowLeft /> Back
+      </button>
 
       <div className="two-column-grid">
-        {/* LEFT: FORM */}
+        {/* LEFT SIDE — FORM */}
         <div className="support-card">
           <h2 className="card-title">Create Feedback</h2>
 
           <div className="ticket-form">
+            {/* SELECT OWNER */}
             <div className="form-row">
               <label className="form-label">Owner</label>
               <select
@@ -139,6 +135,7 @@ export default function FeedbackPanel({
               </select>
             </div>
 
+            {/* FEEDBACK INPUT */}
             <div className="form-row">
               <label className="form-label">Feedback</label>
               <textarea
@@ -155,16 +152,23 @@ export default function FeedbackPanel({
               onClick={addFeedback}
               disabled={sending}
             >
-              {sending ? "Sending..." : "Send feedback"}
+              {sending ? "Sending..." : "Send Feedback"}
             </button>
           </div>
         </div>
 
-        {/* RIGHT: LIST */}
+        {/* RIGHT SIDE — LIST */}
         <div className="tickets-section">
-          <div className="d-flex justify-content-between align-items-center" style={{ marginBottom: "0.75rem" }}>
+          <div
+            className="d-flex justify-content-between align-items-center"
+            style={{ marginBottom: "0.75rem" }}
+          >
             <h2 className="section-title">All Feedback</h2>
-            <button className="submit-btn" style={{ padding: "0.4rem 1.2rem" }} onClick={fetchFeedback}>
+            <button
+              className="submit-btn"
+              style={{ padding: "0.4rem 1.2rem" }}
+              onClick={fetchFeedback}
+            >
               Refresh
             </button>
           </div>
@@ -177,22 +181,28 @@ export default function FeedbackPanel({
             <div className="tickets-list">
               {items.map((fb) => {
                 const isEditing = showEdit && active === fb._id;
+
                 return (
                   <div key={fb._id} className="ticket-item">
+                    {/* LEFT */}
                     <div className="ticket-item-left">
                       <div className="ticket-icon">💬</div>
+
                       <div className="ticket-info">
                         <div className="ticket-title">
                           Feedback for: {getOwnerName(fb.ownerId || fb.owner)}
                         </div>
+
                         <div className="ticket-date">
                           {new Date(fb.createdAt).toLocaleString()}
                         </div>
+
                         {!isEditing && (
                           <p style={{ marginTop: "0.35rem", fontSize: "0.9rem" }}>
                             {fb.content}
                           </p>
                         )}
+
                         {isEditing && (
                           <textarea
                             className="ticket-textarea"
@@ -205,7 +215,14 @@ export default function FeedbackPanel({
                       </div>
                     </div>
 
-                    <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+                    {/* RIGHT SIDE — ACTIONS */}
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "0.4rem",
+                      }}
+                    >
                       {!isEditing ? (
                         <>
                           <button
@@ -213,8 +230,9 @@ export default function FeedbackPanel({
                             style={{ padding: "0.35rem 1rem" }}
                             onClick={() => startEdit(fb)}
                           >
-                            Edit
+                            <FiEdit2 /> Edit
                           </button>
+
                           <button
                             className="submit-btn"
                             style={{
@@ -223,7 +241,7 @@ export default function FeedbackPanel({
                             }}
                             onClick={() => deleteFeedback(fb._id)}
                           >
-                            Delete
+                            <FiTrash2 /> Delete
                           </button>
                         </>
                       ) : (
@@ -235,6 +253,7 @@ export default function FeedbackPanel({
                           >
                             Save
                           </button>
+
                           <button
                             className="submit-btn"
                             style={{
