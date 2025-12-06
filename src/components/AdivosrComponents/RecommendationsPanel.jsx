@@ -1,15 +1,40 @@
 // RecommendationsPanel.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 
-export default function RecommendationsPanel({ advisorId, owners = [] }) {
+export default function RecommendationsPanel({
+  owners = [],
+  advisorId,
+  setTab,   
+  prevTab   
+}) {
+
   const [ownerId, setOwnerId] = useState("");
   const [text, setText] = useState("");
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
 
   // ============================
-  // SEND RECOMMENDATION
+  // LOAD SENT RECOMMENDATIONS
+  // ============================
+  useEffect(() => {
+    if (!advisorId) return;
+    fetchRecommendations();
+  }, [advisorId]);
+
+  const fetchRecommendations = async () => {
+    try {
+      const res = await axios.get(
+        `http://localhost:5001/api/advisor/recommendations/${advisorId}`
+      );
+      setItems(res.data || []);
+    } catch (err) {
+      console.error("Error loading recommendations:", err);
+    }
+  };
+
+  // ============================
+  // SEND NEW RECOMMENDATION
   // ============================
   const sendRecommendation = async () => {
     if (!ownerId || !text.trim()) return;
@@ -18,14 +43,12 @@ export default function RecommendationsPanel({ advisorId, owners = [] }) {
     try {
       const res = await axios.post(
         "http://localhost:5001/api/advisor/recommendations",
-        {
-          advisorId,
-          ownerId,
-          text, // ✅ FIXED — now matches backend
-        }
+        { advisorId, ownerId, text }
       );
 
       const rec = res.data?.recommendation || res.data;
+
+      // Add instantly to UI
       if (rec) setItems((prev) => [rec, ...prev]);
 
       setText("");
@@ -39,13 +62,16 @@ export default function RecommendationsPanel({ advisorId, owners = [] }) {
 
   return (
     <div className="support-container">
-      {/* -------- HEADER -------- */}
+      {/* ===== HEADER ===== */}
       <h1 className="support-title">Recommendations</h1>
       <p className="support-subtitle">
         Send business recommendations directly to owners.
       </p>
+    <button className="back-btn" onClick={() => setTab(prevTab)}>← Back</button>
 
-      {/* -------- FORM CARD -------- */}
+
+
+      {/* ===== FORM CARD ===== */}
       <div className="support-card">
         <div className="ticket-form">
 
@@ -60,13 +86,13 @@ export default function RecommendationsPanel({ advisorId, owners = [] }) {
               <option value="">Select Owner</option>
               {owners.map((o) => (
                 <option key={o._id} value={o._id}>
-                  {o.username || o.fullName || "Owner"} {/* FIXED */}
+                  {o.username || o.fullName || "Owner"}
                 </option>
               ))}
             </select>
           </div>
 
-          {/* RECOMMENDATION TEXT */}
+          {/* TEXT */}
           <div className="form-row">
             <label className="form-label">Recommendation</label>
             <textarea
@@ -78,7 +104,7 @@ export default function RecommendationsPanel({ advisorId, owners = [] }) {
             />
           </div>
 
-          {/* SUBMIT BUTTON */}
+          {/* SUBMIT */}
           <button
             className="submit-btn"
             onClick={sendRecommendation}
@@ -89,7 +115,7 @@ export default function RecommendationsPanel({ advisorId, owners = [] }) {
         </div>
       </div>
 
-      {/* -------- SENT RECOMMENDATIONS -------- */}
+      {/* ===== SENT RECOMMENDATIONS ===== */}
       <div className="tickets-section">
         <h2 className="section-title">Sent Recommendations</h2>
 
@@ -111,7 +137,7 @@ export default function RecommendationsPanel({ advisorId, owners = [] }) {
                       To: {r.ownerName || r.owner?.username || "Owner"}
                     </div>
 
-                    <div className="ticket-date">{r.text}</div> {/* FIXED */}
+                    <div className="ticket-date">{r.text}</div>
 
                     <div className="ticket-date" style={{ fontSize: "12px" }}>
                       {new Date(r.createdAt).toLocaleString()}

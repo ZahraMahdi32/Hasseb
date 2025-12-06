@@ -12,7 +12,11 @@ import "../../SharedStyles/SharedSupport.css";
 
 const TICKETS_API_URL = "http://localhost:5001/api/tickets";
 
-export default function SupportPanel2({ advisorId, setSelectedTicket, setTab }) {
+export default function SupportPanel2({
+  setTab,  
+  prevTab,
+  setSelectedTicket   
+}) {
   const user = JSON.parse(localStorage.getItem("loggedUser"));
   const fromUserId = user?.userId;
   const fromRole = "advisor";
@@ -73,6 +77,20 @@ export default function SupportPanel2({ advisorId, setSelectedTicket, setTab }) 
       setLoading(false);
     }
   }
+  <button
+    className="back-btn"
+    onClick={() => setTab(prevTab)}
+    style={{
+      marginBottom: "1rem",
+      padding: "8px 16px",
+      background: "#eee",
+      borderRadius: "8px",
+      cursor: "pointer",
+    }}
+  >
+    ⬅ Back
+  </button>
+
 
   const total = tickets.length;
   const openCount = tickets.filter((t) => t.status === "open").length;
@@ -91,6 +109,7 @@ export default function SupportPanel2({ advisorId, setSelectedTicket, setTab }) 
   return (
     <div className="support-container">
       <h1 className="support-title">Support & Tickets</h1>
+      <button className="back-btn" onClick={() => setTab(prevTab)}>← Back</button>
 
       {error && (
         <div className="support-error">

@@ -15,17 +15,25 @@ export default function Advisor() {
   const advisorId = user?.userId;
 
   const [tab, setTab] = useState("dashboard");
+  const [prevTab, setPrevTab] = useState("dashboard");
   const [menuOpen, setMenuOpen] = useState(false);
-
-  const handleOpenMenu = () => setMenuOpen(true);
-  const handleCloseMenu = () => setMenuOpen(false);
 
   const [tickets, setTickets] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [feedback, setFeedback] = useState([]);
   const [owners, setOwners] = useState([]);
 
-  // ----------------------- FIXED API CALLS -----------------------
+  // =============== MENU CONTROLS ===============
+  const handleOpenMenu = () => setMenuOpen(true);
+  const handleCloseMenu = () => setMenuOpen(false);
+
+  // =============== CHANGE TAB WITH HISTORY ===============
+  const changeTab = (newTab) => {
+    setPrevTab(tab); // save previous tab
+    setTab(newTab);  // change to new tab
+  };
+
+  // ----------------------- API CALLS -----------------------
 
   const fetchTickets = async () => {
     try {
@@ -51,24 +59,21 @@ export default function Advisor() {
     }
   };
 
-  // ---- FIX: USE CORRECT ENDPOINT ----
   const fetchFeedback = async () => {
     try {
       const res = await fetch(
         `http://localhost:5001/api/advisor/feedback/all/${advisorId}`
       );
       const data = await res.json();
-
       setFeedback(data);
-      
-      // Owners come from Dashboard API, not feedback
+
+      // ensure owners list stays updated
       fetchOwners();
     } catch (err) {
       console.error("Error fetching feedback", err);
     }
   };
 
-  // ---- FIX: GET OWNERS FROM DASHBOARD API ----
   const fetchOwners = async () => {
     try {
       const res = await fetch(
@@ -81,20 +86,19 @@ export default function Advisor() {
     }
   };
 
-  // ----------------------------------------------------------------
-
+  // INITIAL LOAD
   useEffect(() => {
     if (!advisorId) return;
 
     fetchTickets();
     fetchNotifications();
-    fetchFeedback();  
+    fetchFeedback();
     fetchOwners();
-
   }, [advisorId]);
 
   const openCount = tickets.filter((t) => t.status === "open").length;
 
+  // ----------------------- PANEL RENDERING -----------------------
   const renderTab = () => {
     switch (tab) {
       case "dashboard":
@@ -104,13 +108,18 @@ export default function Advisor() {
             tickets={tickets}
             notifications={notifications}
             feedback={feedback}
-            setTab={setTab}
+            setTab={changeTab}
             openCount={openCount}
           />
         );
 
       case "analyzer":
-        return <AnalyzerPanel advisorId={advisorId} />;
+        return (
+          <AnalyzerPanel
+            advisorId={advisorId}
+            setTab={changeTab}
+          />
+        );
 
       case "notifications":
         return (
@@ -119,6 +128,8 @@ export default function Advisor() {
             notifications={notifications}
             setNotifications={setNotifications}
             fetchNotifications={fetchNotifications}
+            setTab={changeTab}
+            prevTab={prevTab}
           />
         );
 
@@ -131,12 +142,20 @@ export default function Advisor() {
             tickets={tickets}
             setTickets={setTickets}
             fetchTickets={fetchTickets}
-            setTab={setTab}
+            setTab={changeTab}
+            prevTab={prevTab}
           />
         );
 
       case "recommendations":
-        return <RecommendationsPanel advisorId={advisorId} owners={owners} />;
+        return (
+          <RecommendationsPanel
+            advisorId={advisorId}
+            owners={owners}
+            setTab={changeTab}
+            prevTab={prevTab}
+          />
+        );
 
       case "feedback":
         return (
@@ -146,6 +165,8 @@ export default function Advisor() {
             advisorId={advisorId}
             setFeedback={setFeedback}
             fetchFeedback={fetchFeedback}
+            setTab={changeTab}
+            prevTab={prevTab}
           />
         );
 
@@ -161,7 +182,7 @@ export default function Advisor() {
       <div className="advisor-body">
         <Sidebar
           tab={tab}
-          setTab={setTab}
+          setTab={changeTab}
           isOpen={menuOpen}
           onClose={handleCloseMenu}
         />

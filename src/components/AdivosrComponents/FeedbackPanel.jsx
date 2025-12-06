@@ -3,11 +3,14 @@ import axios from "axios";
 
 export default function FeedbackPanel({
   feedback = [],
-  owners = [],
-  advisorId,
   setFeedback,
   fetchFeedback,
+  setTab,
+  advisorId,
+  owners=[],     
+  prevTab   
 }) {
+
   const [items, setItems] = useState([]);
   const [ownerId, setOwnerId] = useState("");
   const [content, setContent] = useState("");
@@ -54,6 +57,11 @@ export default function FeedbackPanel({
     setEditText(item.content);
     setShowEdit(true);
   };
+  <button className="back-btn" onClick={() => setTab(prevTab)}>
+    ← Back
+  </button>
+
+
 
   const saveEdit = async () => {
     if (!editText.trim()) return;
@@ -107,6 +115,7 @@ export default function FeedbackPanel({
   return (
     <div className="support-container">
       <h1 className="support-title">Feedback</h1>
+      <button className="back-btn" onClick={() => setTab(prevTab)}>← Back</button>
 
       <div className="two-column-grid">
         {/* LEFT: FORM */}

@@ -5,12 +5,11 @@ const multer = require("multer");
 const BusinessData = require("../models/BusinessData");
 const Owner = require("../models/Owner");
 
-// multer memory storage
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
 /* ===============================================================
-   UPLOAD OR UPDATE BUSINESS DATA (UPSERT MODE)
+   UPLOAD + PARSE BUSINESS DATA
 =============================================================== */
 router.post("/upload", upload.single("file"), async (req, res) => {
   try {
@@ -27,25 +26,50 @@ router.post("/upload", upload.single("file"), async (req, res) => {
 
     const data = JSON.parse(parsedData);
 
-    // 🔥 UPDATE IF EXISTS — CREATE IF NOT (THE FIX!)
+    /* 🔥 map the sheets correctly */
+    const formatted = {
+      owner: ownerId,
+      businessName: data.businessName || "My Business",
+
+      products: (data.products || []).map((p) => ({
+        name: p.name,
+        price: Number(p.price),
+        variableCost: Number(p.variableCost),
+        fixedCost: Number(p.fixedCost),
+        contributionMargin: Number(p.cm),
+        breakEvenUnits: Number(p.breakEvenUnits),
+        breakEvenSAR: Number(p.breakEvenSAR)
+      })),
+
+      cashFlow: (data.cashFlow || []).map((r) => ({
+        date: r.date,
+        description: r.description,
+        cashIn: Number(r.cashIn),
+        cashOut: Number(r.cashOut),
+        netCashFlow: Number(r.netCashFlow),
+        runningBalance: Number(r.runningBalance)
+      })),
+
+      pricingScenarios: (data.pricingScenarios || []).map((s) => ({
+        scenario: s.scenario,
+        price: Number(s.price),
+        unitsSold: Number(s.unitsSold),
+        revenue: Number(s.revenue),
+        variableCost: Number(s.variableCost),
+        cm: Number(s.cm),
+        profit: Number(s.profit)
+      })),
+
+      fixedCost: Number(data.fixedCost || 0)
+    };
+
+    /* 🔥 UPSERT (update or insert) */
     const updated = await BusinessData.findOneAndUpdate(
       { owner: ownerId },
-      {
-        owner: ownerId,
-        businessName: data.businessName || "",
-        products: data.products || [],
-        fixedCost: data.fixedCost || 0,
-        cashFlow: data.cashFlow || [],
-        pricingScenarios: data.pricingScenarios || []
-      },
-      {
-        new: true,
-        upsert: true,
-        setDefaultsOnInsert: true
-      }
+      formatted,
+      { new: true, upsert: true }
     );
 
-    // link inside Owner
     owner.businessData = updated._id;
     await owner.save();
 
@@ -77,14 +101,10 @@ router.get("/owner/:ownerId", async (req, res) => {
       });
     }
 
-    res.json({
-      success: true,
-      data
-    });
-
+    return res.json({ success: true, data });
   } catch (err) {
     console.error("Fetch error:", err);
-    res.status(500).json({ success: false, msg: "Server error" });
+    return res.status(500).json({ success: false, msg: "Server error" });
   }
 });
 

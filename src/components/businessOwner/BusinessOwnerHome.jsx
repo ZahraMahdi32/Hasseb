@@ -15,6 +15,9 @@ import AccountPanel from "./AccountPanel.jsx";
 import NotificationsPanel from "./NotificationsPanel.jsx";
 
 export default function OwnerHome() {
+    // ------------------------------
+    // Validate owner login
+    // ------------------------------
     useEffect(() => {
         const user = JSON.parse(localStorage.getItem("loggedUser"));
         if (!user || user.role !== "owner") {
@@ -24,9 +27,12 @@ export default function OwnerHome() {
 
     const [activeTool, setActiveTool] = useState("data");
     const [sidebarOpen, setSidebarOpen] = useState(false);
+
     const [uploadedData, setUploadedData] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+
     const [selectedTicket, setSelectedTicket] = useState(null);
+
     const navigate = useNavigate();
 
     const handleLogout = () => {
@@ -34,6 +40,9 @@ export default function OwnerHome() {
         navigate("/");
     };
 
+    // ------------------------------
+    // Fetch Owner Business Data
+    // ------------------------------
     useEffect(() => {
         fetchBusinessData();
     }, []);
@@ -43,17 +52,25 @@ export default function OwnerHome() {
             const user = JSON.parse(localStorage.getItem("loggedUser"));
             if (!user) return;
 
-            // 🔥 FIXED → Use ownerId, NOT userId
+            // Use ownerId OR fallback to userId
+            const ownerId = user.ownerId || user.userId;
+
+            if (!ownerId) {
+                console.warn("No ownerId/userId found in loggedUser");
+                setUploadedData(null);
+                setIsLoading(false);
+                return;
+            }
+
             const response = await fetch(
-                `http://localhost:5001/api/business-data/owner/${user.ownerId}`
+                `http://localhost:5001/api/business-data/owner/${ownerId}`
             );
 
             const result = await response.json();
 
             if (result.success && result.data) {
+                // FIXED: Store the actual backend data (do NOT erase it)
                 setUploadedData(result.data);
-            } else {
-                setUploadedData(null);
             }
         } catch (error) {
             console.error("Error fetching business data:", error);
@@ -63,6 +80,9 @@ export default function OwnerHome() {
         }
     };
 
+    // ------------------------------
+    // After Upload → Load & Open Tools
+    // ------------------------------
     const handleUploadSuccess = () => {
         fetchBusinessData();
         setActiveTool("breakEven");
@@ -70,12 +90,14 @@ export default function OwnerHome() {
 
     if (isLoading) {
         return (
-            <div style={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                minHeight: "100vh"
-            }}>
+            <div
+                style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    minHeight: "100vh",
+                }}
+            >
                 <h3>Loading...</h3>
             </div>
         );
@@ -100,28 +122,37 @@ export default function OwnerHome() {
             {/* Main Content */}
             <main className="owner-main">
                 <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+
                     {activeTool === "data" && (
                         <BusinessDataUpload onUploadSuccess={handleUploadSuccess} />
                     )}
+
                     {activeTool === "breakEven" && (
                         <BreakEvenCalculator baseData={uploadedData} />
                     )}
+
                     {activeTool === "pricing" && (
                         <PricingSimulator baseData={uploadedData} />
                     )}
+
                     {activeTool === "cashflow" && (
                         <CashFlowTool baseData={uploadedData} />
                     )}
+
                     {activeTool === "insights" && (
                         <OwnerDashboardPanel baseData={uploadedData} />
                     )}
+
                     {activeTool === "account" && (
                         <AccountPanel settings={{}} setSettings={() => {}} />
                     )}
+
                     {activeTool === "notifications" && <NotificationsPanel />}
+
                     {activeTool === "scenarios" && username && (
                         <ScenarioComparison username={username} />
                     )}
+
                     {activeTool === "support" && (
                         <BusinessOwnerSupport
                             username={username}
@@ -129,6 +160,7 @@ export default function OwnerHome() {
                             setTab={setActiveTool}
                         />
                     )}
+
                     {activeTool === "ticketDetails" && (
                         <BusinessOwnerTicketDetails
                             ticket={selectedTicket}

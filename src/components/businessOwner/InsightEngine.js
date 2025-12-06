@@ -3,15 +3,30 @@
 export function generateDashboardInsights(baseData) {
     if (!baseData) return null;
 
-    const { fixedCost, products, cashFlow } = baseData;
+    const { fixedCost, products, cashFlow, pricingScenarios } = baseData;
 
-    // -----------------------------
-    // Break-even insights
-    // -----------------------------
+    // ============================
+    // 1) UNIFY PRODUCT DATA
+    // ============================
+    // إذا كان السعر والتكلفة غير موجودين داخل products, استخدم scenarios
+    const normalizedProducts = (products || []).map((p, i) => {
+        const scenario = pricingScenarios?.[i];
+
+        return {
+            name: p.name,
+            pricePerUnit: scenario?.price ?? p.pricePerUnit ?? 0,
+            variableCostPerUnit: scenario?.variableCost ?? p.variableCostPerUnit ?? 0
+        };
+    });
+
+    // ============================
+    // BREAK-EVEN INSIGHTS
+    // ============================
     const bepInsights = [];
 
-    if (Array.isArray(products) && products.length > 0 && fixedCost != null) {
-        products.forEach((p) => {
+    if (normalizedProducts.length > 0 && fixedCost != null) {
+        normalizedProducts.forEach((p) => {
+
             const cm = Number(p.pricePerUnit) - Number(p.variableCostPerUnit);
 
             if (isNaN(cm)) return;
@@ -34,15 +49,14 @@ export function generateDashboardInsights(baseData) {
         });
     }
 
-    // -----------------------------
-    // Pricing insights
-    // -----------------------------
-    const pricingInsights = (products || []).map((p) => {
+    // ============================
+    // PRICING INSIGHTS
+    // ============================
+    const pricingInsights = normalizedProducts.map((p) => {
         const price = Number(p.pricePerUnit) || 0;
         const varCost = Number(p.variableCostPerUnit) || 0;
 
-        const margin =
-            price > 0 ? ((price - varCost) / price) * 100 : 0;
+        const margin = price > 0 ? ((price - varCost) / price) * 100 : 0;
 
         return {
             product: p.name,
@@ -51,14 +65,14 @@ export function generateDashboardInsights(baseData) {
                 margin < 30
                     ? "Low margin — consider slight price increase."
                     : margin > 60
-                    ? "High margin — good pricing power."
+                    ? "High margin — strong margin, possible premium pricing."
                     : "Healthy margin."
         };
     });
 
-    // -----------------------------
-    // CASH FLOW INSIGHTS (REAL BURN RATE)
-    // -----------------------------
+    // ============================
+    // CASH FLOW INSIGHTS
+    // ============================
     let cashInsights = {
         realBurnRate: 0,
         dangerMonths: 0,
@@ -91,8 +105,8 @@ export function generateDashboardInsights(baseData) {
             }
         });
 
-        // Real burn rate = average of negative months only
         const negativeMonths = netFlows.filter((n) => n < 0);
+
         const realBurnRate =
             negativeMonths.length > 0
                 ? Math.abs(
@@ -109,9 +123,9 @@ export function generateDashboardInsights(baseData) {
         };
     }
 
-    // -----------------------------
-    // Overall health score
-    // -----------------------------
+    // ============================
+    // HEALTH SCORE
+    // ============================
     const scoreParts = [];
 
     const healthyProductsCount =
@@ -125,6 +139,9 @@ export function generateDashboardInsights(baseData) {
         scoreParts.reduce((a, b) => a + b, 0)
     );
 
+    // ============================
+    // RECOMMENDATIONS
+    // ============================
     return {
         bepInsights,
         pricingInsights,
@@ -138,12 +155,15 @@ export function generateDashboardInsights(baseData) {
     };
 }
 
+// ------------------------------------------------------
+// RECOMMENDATION ENGINE
+// ------------------------------------------------------
 function buildRecommendations(bepInsights, pricingInsights, cashInsights) {
     const recs = [];
 
     if (cashInsights.dangerMonths > 0) {
         recs.push(
-            `Cash reserves may become negative starting ${cashInsights.firstDangerMonth}. Reduce expenses or boost revenue before then.`
+            `Cash reserves may become negative starting ${cashInsights.firstDangerMonth}. Consider expense reduction or revenue increase.`
         );
     }
 

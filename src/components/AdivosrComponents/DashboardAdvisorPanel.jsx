@@ -1,30 +1,32 @@
+// DashboardAdvisorPanel.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import AnalyzerPanel from "./AnalyzerPanel.jsx";
 
 export default function DashboardAdvisorPanel({
   advisorId,
-  tickets = [],
-  notifications = [],
   feedback = [],
   setTab,
 }) {
   const [owners, setOwners] = useState([]);
   const [selectedOwner, setSelectedOwner] = useState(null);
   const [ownerData, setOwnerData] = useState(null);
-  const [recommendationText, setRecommendationText] = useState("");
-  const [sending, setSending] = useState(false);
+  const [risk, setRisk] = useState(null);
 
-  // NEW — support tickets exactly like SupportPanel2
   const [supportTickets, setSupportTickets] = useState([]);
+  const [recommendationCount, setRecommendationCount] = useState(0);
+
+  // ⭐ NEW: REAL notifications (instead of props)
+  const [notificationList, setNotificationList] = useState([]);
 
   useEffect(() => {
     if (!advisorId) return;
     fetchOwners();
     fetchSupportTickets();
+    fetchRecommendationCount();
+    fetchNotifications(); // ⭐ important
   }, [advisorId]);
 
-  // Get owners for dashboard
+  // ======== OWNERS ========
   const fetchOwners = async () => {
     try {
       const res = await axios.get(
@@ -36,11 +38,11 @@ export default function DashboardAdvisorPanel({
     }
   };
 
-  // NEW — fetch tickets EXACTLY like SupportPanel2
+  // ======== SUPPORT TICKETS ========
   const fetchSupportTickets = async () => {
     try {
       const user = JSON.parse(localStorage.getItem("loggedUser"));
-      const fromUserId = user?.userId;
+      const fromUserId = user?.userId || advisorId;
 
       const res = await axios.get("http://localhost:5001/api/tickets", {
         params: { role: "advisor", userId: fromUserId },
@@ -52,53 +54,155 @@ export default function DashboardAdvisorPanel({
     }
   };
 
-  const handleSelectOwner = (owner) => {
-    setSelectedOwner(owner);
-    setOwnerData(owner.businessData || null);
-  };
-
-  const submitRecommendation = async () => {
-    if (!recommendationText.trim() || !selectedOwner) return;
-
-    setSending(true);
+  // ======== RECOMMENDATIONS COUNT ========
+  const fetchRecommendationCount = async () => {
     try {
-      await axios.post("http://localhost:5001/api/advisor/suggestions", {
-        advisorId,
-        ownerId: selectedOwner._id,
-        suggestion: { text: recommendationText },
-      });
-
-      setRecommendationText("");
+      const res = await axios.get(
+        `http://localhost:5001/api/advisor/recommendations/${advisorId}`
+      );
+      const items = res.data?.recommendations || res.data || [];
+      setRecommendationCount(items.length);
     } catch (err) {
-      console.error("Error sending recommendation:", err);
-    } finally {
-      setSending(false);
+      console.error("Error loading recommendations:", err);
     }
   };
 
-  // FINAL — THIS IS NOW IDENTICAL TO SUPPORT PANEL
+  // ⭐ NEW — GET REAL NOTIFICATIONS
+  const fetchNotifications = async () => {
+    try {
+      const res = await axios.get(
+        `http://localhost:5001/api/advisor/notifications/${advisorId}`
+      );
+      setNotificationList(res.data || []);
+    } catch (err) {
+      console.error("Failed to load notifications", err);
+    }
+  };
+
+  // ======== SELECT OWNER ========
+  const handleSelectOwner = async (owner) => {
+    setSelectedOwner(owner);
+    setOwnerData(null);
+    setRisk(null);
+
+    try {
+      const res = await axios.get(
+        `http://localhost:5001/api/business-data/owner/${owner._id}`
+      );
+      const data = res.data?.data || null;
+      setOwnerData(data);
+      if (data) calculateRisk(data);
+    } catch (e) {
+      console.error("Owner business data error:", e);
+    }
+  };
+
+  // ======== RISK ANALYSIS ========
+  const calculateRisk = (data) => {
+    const scenario = data.pricingScenarios?.[0] || {};
+    const revenue = scenario.revenue || 0;
+    const variableCost = scenario.variableCost || 0;
+    const profit = scenario.profit || 0;
+
+    const cashArray = data.cashFlow || [];
+
+    const avgCash = Number(
+      (
+        cashArray.reduce((sum, c) => sum + c.netCashFlow, 0) /
+        (cashArray.length || 1)
+      ).toFixed(2)
+    );
+
+    const positiveMonths = cashArray.filter((c) => c.netCashFlow > 0).length;
+    const negativeMonths = cashArray.filter((c) => c.netCashFlow < 0).length;
+
+    const profitMargin =
+      revenue > 0 ? Number(((profit / revenue) * 100).toFixed(2)) : 0;
+
+    const vcRatio =
+      revenue > 0
+        ? Number(((variableCost / revenue) * 100).toFixed(2))
+        : 0;
+
+    let score = 0;
+
+    if (profitMargin < 8) score += 3;
+    else if (profitMargin < 15) score += 2;
+    else if (profitMargin < 20) score += 1;
+
+    if (vcRatio > 70) score += 3;
+    else if (vcRatio > 55) score += 2;
+    else if (vcRatio > 40) score += 1;
+
+    if (avgCash < 0) score += 2;
+
+    if (negativeMonths > positiveMonths) score += 2;
+    else if (negativeMonths > 0) score += 1;
+
+    let level = "Low Risk";
+    let color = "green";
+
+    if (score >= 7) {
+      level = "High Risk";
+      color = "red";
+    } else if (score >= 4) {
+      level = "Medium Risk";
+      color = "orange";
+    }
+
+    setRisk({
+      level,
+      color,
+      score,
+      profitMargin,
+      vcRatio,
+      positiveMonths,
+      negativeMonths,
+      avgCash,
+    });
+  };
+
+  // ======== COUNTS ========
   const openTickets = supportTickets.filter((t) => t.status === "open").length;
 
-  const unreadNotifications =
-    Array.isArray(notifications) &&
-    notifications.filter((n) => !n.read).length;
+  // ⭐ now using real notifications, not props
+  const unreadNotifications = notificationList.filter((n) => !n.read).length;
 
-  const feedbackCount = Array.isArray(feedback) ? feedback.length : 0;
+  const feedbackCount = feedback.length;
+  const totalRecommendations = recommendationCount;
+
+  // ======== BUSINESS METRICS ========
+  const scenario = ownerData?.pricingScenarios?.[0] || null;
+
+  const totalCost =
+    scenario && ownerData?.fixedCost != null
+      ? ownerData.fixedCost + scenario.variableCost
+      : null;
+
+  const profitMarginDisplay =
+    scenario && scenario.revenue
+      ? ((scenario.profit / scenario.revenue) * 100).toFixed(2)
+      : null;
+
+  const avgCashFlowDisplay =
+    ownerData?.cashFlow?.length
+      ? Number(
+          (
+            ownerData.cashFlow.reduce((s, c) => s + c.netCashFlow, 0) /
+            ownerData.cashFlow.length
+          ).toFixed(2)
+        )
+      : null;
 
   return (
     <div className="support-container">
-      {/* ===== TITLE ===== */}
       <h1 className="support-title">Advisor Dashboard</h1>
 
       {/* ===== STATS CARDS ===== */}
       <div className="stats-grid">
 
-        {/* OPEN TICKETS — CLICKABLE */}
-        <div
-          className="stat-card clickable"
-          onClick={() => setTab("support")}
-          style={{ cursor: "pointer" }}
-        >
+        {/* OPEN TICKETS */}
+        <div className="stat-card clickable" onClick={() => setTab("support")}>
           <div className="stat-icon-wrapper stat-icon-blue">📩</div>
           <div className="stat-content">
             <span className="stat-label">Open Tickets</span>
@@ -106,29 +210,36 @@ export default function DashboardAdvisorPanel({
           </div>
         </div>
 
-        {/* UNREAD NOTIFICATIONS — CLICKABLE */}
+        {/* NOTIFICATIONS */}
         <div
           className="stat-card clickable"
           onClick={() => setTab("notifications")}
-          style={{ cursor: "pointer" }}
         >
           <div className="stat-icon-wrapper stat-icon-yellow">🔔</div>
           <div className="stat-content">
             <span className="stat-label">Unread Notifications</span>
-            <span className="stat-value">{unreadNotifications || 0}</span>
+            <span className="stat-value">{unreadNotifications}</span>
           </div>
         </div>
 
-        {/* FEEDBACK — CLICKABLE */}
-        <div
-          className="stat-card clickable"
-          onClick={() => setTab("feedback")}
-          style={{ cursor: "pointer" }}
-        >
+        {/* FEEDBACK */}
+        <div className="stat-card clickable" onClick={() => setTab("feedback")}>
           <div className="stat-icon-wrapper stat-icon-green">💬</div>
           <div className="stat-content">
             <span className="stat-label">Total Feedback</span>
             <span className="stat-value">{feedbackCount}</span>
+          </div>
+        </div>
+
+        {/* RECOMMENDATIONS */}
+        <div
+          className="stat-card clickable"
+          onClick={() => setTab("recommendations")}
+        >
+          <div className="stat-icon-wrapper stat-icon-purple">📝</div>
+          <div className="stat-content">
+            <span className="stat-label">Recommendations</span>
+            <span className="stat-value">{totalRecommendations}</span>
           </div>
         </div>
       </div>
@@ -136,7 +247,7 @@ export default function DashboardAdvisorPanel({
       {/* ===== MAIN GRID ===== */}
       <div className="two-column-grid">
 
-        {/* LEFT: OWNERS */}
+        {/* LEFT — OWNERS LIST */}
         <div className="support-card">
           <h2 className="card-title">Assigned Owners</h2>
 
@@ -144,30 +255,26 @@ export default function DashboardAdvisorPanel({
             <div className="empty-state">No owners assigned yet.</div>
           )}
 
-          {owners.length > 0 && (
-            <div className="tickets-list">
-              {owners.map((owner) => (
-                <div
-                  key={owner._id}
-                  className="ticket-item"
-                  onClick={() => handleSelectOwner(owner)}
-                >
-                  <div className="ticket-item-left">
-                    <div className="ticket-icon">👤</div>
-                    <div className="ticket-info">
-                      <div className="ticket-title">{owner.fullName}</div>
-                      <div className="ticket-date">{owner.username}</div>
-                    </div>
-                  </div>
-                  <span className="ticket-status status-open">Owner</span>
+          {owners.map((owner) => (
+            <div
+              key={owner._id}
+              className="ticket-item"
+              onClick={() => handleSelectOwner(owner)}
+            >
+              <div className="ticket-item-left">
+                <div className="ticket-icon">👤</div>
+                <div className="ticket-info">
+                  <div className="ticket-title">{owner.fullName}</div>
+                  <div className="ticket-date">{owner.username}</div>
                 </div>
-              ))}
+              </div>
+              <span className="ticket-status status-open">Owner</span>
             </div>
-          )}
+          ))}
         </div>
 
-        {/* RIGHT: DETAILS + ANALYZER + RECOMMENDATION */}
-        <div className="tickets-section">
+        {/* RIGHT — BUSINESS DETAILS */}
+        <div className="support-card">
           {!selectedOwner ? (
             <div className="empty-state">
               Select an owner to view business details.
@@ -178,59 +285,136 @@ export default function DashboardAdvisorPanel({
                 {selectedOwner.fullName} — Business Overview
               </h2>
 
-              {/* BUSINESS DATA */}
               {!ownerData ? (
-                <p className="support-error">
-                  This owner has not uploaded business data.
+                <p className="empty-state">
+                  This owner has not uploaded business data yet.
                 </p>
               ) : (
-                <div style={{ marginBottom: "1.5rem" }}>
-                  <h3 className="card-title">Business Data</h3>
-
-                  <div className="stats-grid" style={{ marginBottom: 0 }}>
+                <>
+                  {/* BUSINESS METRICS */}
+                  <div className="stats-grid" style={{ marginBottom: "1.5rem" }}>
                     <div className="stat-card">
-                      <div className="stat-content">
-                        <span className="stat-label">Fixed Cost</span>
-                        <span className="stat-value">{ownerData.fixedCost}</span>
-                      </div>
+                      <span className="stat-label">Fixed Cost</span>
+                      <span className="stat-value">{ownerData.fixedCost}</span>
                     </div>
 
                     <div className="stat-card">
-                      <div className="stat-content">
-                        <span className="stat-label">Variable Cost</span>
-                        <span className="stat-value">
-                          {ownerData.products?.[0]?.variableCostPerUnit}
-                        </span>
-                      </div>
+                      <span className="stat-label">Price / Unit</span>
+                      <span className="stat-value">
+                        {scenario?.price ?? "—"}
+                      </span>
                     </div>
 
                     <div className="stat-card">
-                      <div className="stat-content">
-                        <span className="stat-label">Price / Unit</span>
-                        <span className="stat-value">
-                          {ownerData.products?.[0]?.pricePerUnit}
-                        </span>
-                      </div>
+                      <span className="stat-label">Revenue</span>
+                      <span className="stat-value">
+                        {scenario?.revenue ?? "—"}
+                      </span>
                     </div>
 
                     <div className="stat-card">
-                      <div className="stat-content">
-                        <span className="stat-label">Avg Units</span>
-                        <span className="stat-value">
-                          {ownerData.avgMonthlyUnits}
-                        </span>
-                      </div>
+                      <span className="stat-label">Variable Cost</span>
+                      <span className="stat-value">
+                        {scenario?.variableCost ?? "—"}
+                      </span>
+                    </div>
+
+                    <div className="stat-card">
+                      <span className="stat-label">Total Cost</span>
+                      <span className="stat-value">{totalCost ?? "—"}</span>
+                    </div>
+
+                    <div className="stat-card">
+                      <span className="stat-label">Profit</span>
+                      <span className="stat-value">
+                        {scenario?.profit ?? "—"}
+                      </span>
+                    </div>
+
+                    <div className="stat-card">
+                      <span className="stat-label">Profit Margin (%)</span>
+                      <span className="stat-value">
+                        {profitMarginDisplay ?? "—"}
+                      </span>
+                    </div>
+
+                    <div className="stat-card">
+                      <span className="stat-label">Avg Cash Flow</span>
+                      <span className="stat-value">
+                        {avgCashFlowDisplay ?? "—"}
+                      </span>
                     </div>
                   </div>
-                </div>
-              )}
 
-              {/* RECOMMENDATION FORM */}
-              
+                  {/* RISK ANALYSIS */}
+                  {risk && (
+                    <div style={{ marginTop: "1rem", width: "100%" }}>
+                      <h3 className="card-title">Risk Analysis</h3>
+
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns:
+                            "repeat(auto-fit, minmax(220px, 1fr))",
+                          gap: "1rem",
+                        }}
+                      >
+                        <div className="stat-card">
+                          <span className="stat-label">Risk Level</span>
+                          <span
+                            className="stat-value"
+                            style={{
+                              color: risk.color,
+                              fontWeight: "bold",
+                            }}
+                          >
+                            {risk.level}
+                          </span>
+                        </div>
+
+                        <div className="stat-card">
+                          <span className="stat-label">Risk Score</span>
+                          <span className="stat-value">{risk.score}</span>
+                        </div>
+
+                        <div className="stat-card">
+                          <span className="stat-label">Profit Margin %</span>
+                          <span className="stat-value">
+                            {risk.profitMargin}
+                          </span>
+                        </div>
+
+                        <div className="stat-card">
+                          <span className="stat-label">VC Ratio %</span>
+                          <span className="stat-value">{risk.vcRatio}</span>
+                        </div>
+
+                        <div className="stat-card">
+                          <span className="stat-label">Positive Months</span>
+                          <span className="stat-value">
+                            {risk.positiveMonths}
+                          </span>
+                        </div>
+
+                        <div className="stat-card">
+                          <span className="stat-label">Negative Months</span>
+                          <span className="stat-value">
+                            {risk.negativeMonths}
+                          </span>
+                        </div>
+
+                        <div className="stat-card">
+                          <span className="stat-label">Avg Cash Flow</span>
+                          <span className="stat-value">{risk.avgCash}</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
             </>
           )}
         </div>
-
       </div>
     </div>
   );
