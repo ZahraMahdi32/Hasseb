@@ -13,8 +13,8 @@ const businessDataRoutes = require("./src/routes/businessDataRoutes");
 const advisorRoute = require("./src/routes/advisorRoutes/advisorRoute");
 const ownerAdvisorRoutes = require("./src/routes/advisorRoutes/ownerAdvisorRoutes");
 const ownerRoutes = require("./src/routes/OwnerRoutes");
-const scenarioRoutes = require("./src/routes/scenarioRoutes");   // ⭐ ADD THIS
-
+const scenarioRoutes = require("./src/routes/scenarioRoutes");
+const assignmentRoutes = require("./src/routes/ManagerRoutes/AssignmentRoutes"); 
 // ===============================
 //  CONFIG
 // ===============================
@@ -39,8 +39,9 @@ app.use("/api/business-data", businessDataRoutes);
 app.use("/api/advisor", advisorRoute);
 app.use("/api/link", ownerAdvisorRoutes);
 app.use("/api/owner", ownerRoutes);
-app.use("/api/pricing-scenarios", scenarioRoutes); 
+app.use("/api/pricing-scenarios", scenarioRoutes);
 app.use("/api/tickets", require("./src/routes/ManagerRoutes/TicketRoutes"));
+app.use("/api/assignments", assignmentRoutes); // ⭐ FIXED
 
 // ===============================
 //  START SERVER

@@ -87,77 +87,46 @@ export default function BusinessDataUpload({ onUploadSuccess }) {
         try {
             // Step 1: Parse Excel
             setUploadProgress("📊 Parsing Excel file...");
-            console.log("📊 Starting Excel parsing...");
-
             const parsedData = await parseExcelFile(uploadedFile);
 
-            console.log("✅ Parsed data:", {
-                products: parsedData.products.length,
-                cashFlow: parsedData.cashFlow.length,
-                pricingScenarios: parsedData.pricingScenarios.length,
-                fixedCost: parsedData.fixedCost
-            });
-
-            // Validate parsed data
-            if (!parsedData.products || parsedData.products.length === 0) {
-                throw new Error("No products found in the Excel file. Please check the Cost-Volume-Profit sheet.");
+            if (!parsedData.products?.length) {
+                throw new Error("No products found in the Excel file.");
             }
 
-            if (!parsedData.cashFlow || parsedData.cashFlow.length === 0) {
-                throw new Error("No cash flow data found. Please check the Cash Flow sheet.");
-            }
-
-            setUploadProgress(`✅ Parsed successfully: ${parsedData.products.length} products, ${parsedData.cashFlow.length} cash flow entries`);
-
-            // Step 2: Check authentication
-            setUploadProgress("🔐 Checking authentication...");
             const loggedUser = JSON.parse(localStorage.getItem("loggedUser"));
-
-            if (!loggedUser || !loggedUser.username) {
-                throw new Error("User not authenticated. Please log in again.");
+            if (!loggedUser?.userId) {
+                throw new Error("User not authenticated.");
             }
 
-            // Step 3: Prepare upload
-            setUploadProgress("📦 Preparing data for upload...");
+            setUploadProgress("📦 Preparing data...");
             const formData = new FormData();
             formData.append("file", uploadedFile);
             formData.append("parsedData", JSON.stringify(parsedData));
-            formData.append("username", loggedUser.username);
+            formData.append("ownerId", loggedUser.userId); // FIXED ✔
 
-            console.log("📤 Uploading to backend for user:", loggedUser.username);
-
-            // Step 4: Upload to backend
-            setUploadProgress("⬆️ Uploading to server...");
+            setUploadProgress("⬆️ Uploading...");
             const response = await fetch("http://localhost:5001/api/business-data/upload", {
                 method: "POST",
                 body: formData
             });
 
             if (!response.ok) {
-                throw new Error(`Server error: ${response.status} ${response.statusText}`);
+                throw new Error(`Server error (${response.status})`);
             }
 
             const result = await response.json();
 
             if (result.success) {
-                console.log("✅ Upload successful:", result);
                 setUploadSuccess(true);
-                setUploadError(null);
-                setUploadProgress("✅ Upload completed successfully!");
-
-                // Call parent callback if provided
-                if (onUploadSuccess) {
-                    onUploadSuccess(result.data);
-                }
+                setUploadProgress("✅ Upload completed!");
+                if (onUploadSuccess) onUploadSuccess(result.data);
             } else {
                 throw new Error(result.msg || "Upload failed");
             }
 
         } catch (error) {
             console.error("🔥 Upload error:", error);
-            setUploadError(error.message || "An error occurred during upload");
-            setUploadSuccess(false);
-            setUploadProgress("");
+            setUploadError(error.message);
         } finally {
             setIsUploading(false);
         }
@@ -165,21 +134,18 @@ export default function BusinessDataUpload({ onUploadSuccess }) {
 
     return (
         <>
-            {/* Header */}
-            <div className="upload-header">
-                <h1>Import Your Business Data</h1>
-                <p>Structure your business data using Haseeb's standardized Excel template for accurate financial analysis.</p>
-            </div>
-
-            {/* Download Template Card */}
             <div className="upload-card">
                 <div className="card-content-center">
-                    <div className="icon-wrapper download-icon">
-                        <Download className="card-icon" />
+                    <div className="header-with-icon">
+                        <div className="icon-wrapper download-icon">
+                            <Download className="card-icon" />
+                        </div>
+                        <h2>Import Your Business Data</h2>
                     </div>
 
-                    <h2>Download Haseeb Template</h2>
-                    <p>Pre-formatted Excel workbook with three sheets: Cash Flow, Cost-Volume-Profit, and Pricing Analysis.</p>
+                    <p className="download-section-desc">
+                        Organize your business data with Haseeb’s Excel template.
+                    </p>
 
                     <button
                         onClick={() => {
@@ -195,14 +161,12 @@ export default function BusinessDataUpload({ onUploadSuccess }) {
                 </div>
             </div>
 
-            {/* Upload Template Card */}
             <div className="upload-card">
                 <div className="upload-card-header">
                     <h2>Upload Completed Template</h2>
                     <p className="upload-subtitle">Ensure all required fields are filled before uploading</p>
                 </div>
 
-                {/* Drop Zone */}
                 <div
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
@@ -219,9 +183,7 @@ export default function BusinessDataUpload({ onUploadSuccess }) {
                             </div>
 
                             <p className="drop-zone-title">Select a file to upload</p>
-                            <p className="drop-zone-subtitle">
-                                or drag and drop your completed template here
-                            </p>
+                            <p className="drop-zone-subtitle">or drag and drop your template here</p>
 
                             <button
                                 onClick={() => document.getElementById("file-input").click()}
@@ -230,26 +192,18 @@ export default function BusinessDataUpload({ onUploadSuccess }) {
                                 Browse Files
                             </button>
 
-                            <p className="upload-hint">
-                                Accepted formats: .xlsx, .xls — Maximum size: 10MB
-                            </p>
+                            <p className="upload-hint">Accepted: .xlsx / .xls — Max: 10MB</p>
                         </div>
                     ) : (
                         <div className="uploaded-file">
                             <div className="file-info">
-                                <div className="success-icon-wrap">
-                                    <CheckCircle className="success-icon" />
-                                </div>
+                                <CheckCircle className="success-icon" />
                                 <div className="file-details">
                                     <p className="file-name">{uploadedFile.name}</p>
                                     <p className="file-size">{(uploadedFile.size / 1024).toFixed(2)} KB</p>
                                 </div>
                             </div>
-                            <button
-                                onClick={removeFile}
-                                className="remove-btn"
-                                disabled={isUploading}
-                            >
+                            <button className="remove-btn" onClick={removeFile} disabled={isUploading}>
                                 <X className="remove-icon" />
                             </button>
                         </div>
@@ -264,39 +218,34 @@ export default function BusinessDataUpload({ onUploadSuccess }) {
                     />
                 </div>
 
-                {/* Progress Message */}
                 {uploadProgress && (
                     <div className="progress-message">
                         {isUploading && <Loader className="progress-spinner" size={20} />}
-                        <span className="progress-text">{uploadProgress}</span>
+                        <span>{uploadProgress}</span>
                     </div>
                 )}
 
-                {/* Error Message */}
                 {uploadError && (
                     <div className="error-message">
-                        <AlertCircle size={20} className="error-icon" />
-                        <div className="error-content">
+                        <AlertCircle size={20} />
+                        <div>
                             <p className="error-title">Upload Failed</p>
-                            <p className="error-description">{uploadError}</p>
+                            <p>{uploadError}</p>
                         </div>
                     </div>
                 )}
 
-                {/* Success Message */}
                 {uploadSuccess && (
                     <div className="success-message">
                         <CheckCircle size={20} className="success-icon-msg" />
-                        <span className="success-text">
-                            Data uploaded successfully! Your business data is now ready for analysis.
-                        </span>
+                        <span>Data uploaded successfully!</span>
                     </div>
                 )}
 
                 {uploadedFile && !uploadSuccess && (
                     <div className="process-btn-wrapper">
                         <button
-                            className={`process-btn ${isUploading ? 'processing' : ''}`}
+                            className={`process-btn ${isUploading ? "processing" : ""}`}
                             onClick={handleProcessTemplate}
                             disabled={isUploading}
                         >

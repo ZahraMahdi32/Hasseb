@@ -1,150 +1,127 @@
-import React, { useState, useEffect } from "react";
+// RecommendationsPanel.jsx
+import React, { useState } from "react";
 import axios from "axios";
-import AnalyzerPanel from "./AnalyzerPanel.jsx";
 
-export default function RecommendationsPanel({ owners, advisorId }) {
-  const [selectedOwner, setSelectedOwner] = useState(null);
-  const [ownerData, setOwnerData] = useState(null);
-  const [recommendations, setRecommendations] = useState([]);
+export default function RecommendationsPanel({ advisorId, owners = [] }) {
+  const [ownerId, setOwnerId] = useState("");
   const [text, setText] = useState("");
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  // fetch recommendations for selected owner
-  const loadRecommendations = async (ownerId) => {
-    try {
-      const res = await axios.get(
-        `http://localhost:5001/api/advisor/suggestions/${ownerId}`
-      );
-      setRecommendations(res.data || []);
-    } catch (err) {
-      console.log("Error loading recs:", err);
-    }
-  };
-
-  // when selecting owner
-  const handleSelect = (owner) => {
-    setSelectedOwner(owner);
-    setOwnerData(owner.businessData || null);
-    loadRecommendations(owner._id);
-  };
-
+  // ============================
+  // SEND RECOMMENDATION
+  // ============================
   const sendRecommendation = async () => {
-    if (!text.trim()) return;
+    if (!ownerId || !text.trim()) return;
 
+    setLoading(true);
     try {
-      await axios.post("http://localhost:5001/api/advisor/suggestions", {
-        advisorId,
-        ownerId: selectedOwner._id,
-        suggestion: { text },
-      });
+      const res = await axios.post(
+        "http://localhost:5001/api/advisor/recommendations",
+        {
+          advisorId,
+          ownerId,
+          text, // ✅ FIXED — now matches backend
+        }
+      );
+
+      const rec = res.data?.recommendation || res.data;
+      if (rec) setItems((prev) => [rec, ...prev]);
 
       setText("");
-      loadRecommendations(selectedOwner._id);
-      alert("Recommendation sent!");
+      setOwnerId("");
     } catch (err) {
-      console.log("Error sending rec:", err);
+      console.error("Error sending recommendation", err);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="p-4">
-      <h2 className="fw-bold mb-3">Recommendations</h2>
+    <div className="support-container">
+      {/* -------- HEADER -------- */}
+      <h1 className="support-title">Recommendations</h1>
+      <p className="support-subtitle">
+        Send business recommendations directly to owners.
+      </p>
 
-      <div className="d-flex gap-4">
+      {/* -------- FORM CARD -------- */}
+      <div className="support-card">
+        <div className="ticket-form">
 
-        {/* Owners list */}
-        <div className="col-3 bg-white shadow p-3 rounded">
-          <h5 className="fw-bold mb-2">Owners</h5>
-
-          {owners.map((o) => (
-            <div
-              key={o._id}
-              className={`p-2 rounded mb-2 border ${
-                selectedOwner?._id === o._id ? "bg-light border-primary" : ""
-              }`}
-              style={{ cursor: "pointer" }}
-              onClick={() => handleSelect(o)}
+          {/* OWNER SELECT */}
+          <div className="form-row">
+            <label className="form-label">Owner</label>
+            <select
+              className="ticket-input"
+              value={ownerId}
+              onChange={(e) => setOwnerId(e.target.value)}
             >
-              <p className="m-0 fw-bold">{o.fullName}</p>
-              <p className="small text-muted">{o.username}</p>
-            </div>
-          ))}
+              <option value="">Select Owner</option>
+              {owners.map((o) => (
+                <option key={o._id} value={o._id}>
+                  {o.username || o.fullName || "Owner"} {/* FIXED */}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* RECOMMENDATION TEXT */}
+          <div className="form-row">
+            <label className="form-label">Recommendation</label>
+            <textarea
+              className="ticket-textarea"
+              rows={4}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Write a clear, actionable recommendation..."
+            />
+          </div>
+
+          {/* SUBMIT BUTTON */}
+          <button
+            className="submit-btn"
+            onClick={sendRecommendation}
+            disabled={loading}
+          >
+            {loading ? "Sending..." : "Send Recommendation"}
+          </button>
         </div>
+      </div>
 
-        {/* Owner details + analyzer + recommendations */}
-        <div className="col-9">
+      {/* -------- SENT RECOMMENDATIONS -------- */}
+      <div className="tickets-section">
+        <h2 className="section-title">Sent Recommendations</h2>
 
-          {!selectedOwner ? (
-            <div className="text-muted mt-5">Select an owner to view details.</div>
+        <div className="support-card">
+          {items.length === 0 ? (
+            <p className="empty-state">No recommendations sent yet.</p>
           ) : (
-            <div>
+            items.map((r) => (
+              <div
+                key={r._id}
+                className="ticket-item"
+                style={{ alignItems: "flex-start" }}
+              >
+                <div className="ticket-item-left">
+                  <div className="ticket-icon">💬</div>
 
-              {/* Business Data */}
-              <div className="bg-white shadow p-3 rounded mb-4">
-                <h4 className="fw-bold mb-3">
-                  {selectedOwner.fullName}'s Business
-                </h4>
-
-                {!ownerData ? (
-                  <p className="text-danger">No business data available.</p>
-                ) : (
-                  <div className="row">
-                    <div className="col-md-6">
-                      <p><strong>Fixed Cost:</strong> {ownerData.fixedCost}</p>
-                      <p><strong>Variable Cost:</strong> {ownerData.variableCost}</p>
+                  <div className="ticket-info">
+                    <div className="ticket-title">
+                      To: {r.ownerName || r.owner?.username || "Owner"}
                     </div>
-                    <div className="col-md-6">
-                      <p><strong>Price per Unit:</strong> {ownerData.pricePerUnit}</p>
-                      <p><strong>Avg Units:</strong> {ownerData.avgMonthlyUnits}</p>
+
+                    <div className="ticket-date">{r.text}</div> {/* FIXED */}
+
+                    <div className="ticket-date" style={{ fontSize: "12px" }}>
+                      {new Date(r.createdAt).toLocaleString()}
                     </div>
                   </div>
-                )}
+                </div>
+
+                <span className="ticket-status status-open">Sent</span>
               </div>
-
-              {/* Analyzer */}
-              <AnalyzerPanel businessData={ownerData} />
-
-              {/* Write Recommendation */}
-              <div className="bg-white shadow p-3 rounded mt-4">
-                <h5 className="fw-bold mb-2">Write Recommendation</h5>
-
-                <textarea
-                  className="form-control"
-                  rows="4"
-                  value={text}
-                  onChange={(e) => setText(e.target.value)}
-                  placeholder="Type recommendation here..."
-                ></textarea>
-
-                <button
-                  className="btn btn-primary mt-2"
-                  onClick={sendRecommendation}
-                >
-                  Submit
-                </button>
-              </div>
-
-              {/* Previous Recommendations */}
-              <div className="bg-white shadow p-3 rounded mt-4">
-                <h5 className="fw-bold mb-2">Previous Recommendations</h5>
-
-                {recommendations.length === 0 ? (
-                  <p className="text-muted">No recommendations yet.</p>
-                ) : (
-                  recommendations.map((rec) => (
-                    <div
-                      key={rec._id}
-                      className="p-2 border rounded mb-2 bg-light"
-                    >
-                      <p className="m-0">{rec.suggestion?.text}</p>
-                      <span className="text-muted small">
-                        {new Date(rec.createdAt).toLocaleString()}
-                      </span>
-                    </div>
-                  ))
-                )}
-              </div>
-
-            </div>
+            ))
           )}
         </div>
       </div>

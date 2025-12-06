@@ -1,225 +1,256 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
-import {
-  FiEye,
-  FiTrash2,
-  FiDownload,
-  FiArrowLeft,
-  FiEdit2,
-} from "react-icons/fi";
 
-export default function FeedbackPanel({ feedback = [], owners = [], advisorId }) {
+export default function FeedbackPanel({
+  feedback = [],
+  owners = [],
+  advisorId,
+  setFeedback,
+  fetchFeedback,
+}) {
   const [items, setItems] = useState([]);
-  const [addingOwner, setAddingOwner] = useState("");
-  const [addingContent, setAddingContent] = useState("");
+  const [ownerId, setOwnerId] = useState("");
+  const [content, setContent] = useState("");
+  const [sending, setSending] = useState(false);
 
   const [active, setActive] = useState(null);
   const [editText, setEditText] = useState("");
+  const [showEdit, setShowEdit] = useState(false);
 
-  // Sync incoming feedback ONCE when props change
   useEffect(() => {
     setItems(feedback);
   }, [feedback]);
 
-  // -----------------------------
-  // ADD NEW FEEDBACK
-  // -----------------------------
   const addFeedback = async () => {
-    if (!addingOwner) return alert("Select an owner");
-    if (!addingContent.trim()) return alert("Feedback content required");
-
+    if (!ownerId || !content.trim()) return;
+    setSending(true);
     try {
-      const res = await axios.post("http://localhost:5001/api/advisor/feedback", {
-        advisorId,
-        ownerId: addingOwner,
-        content: addingContent,
-      });
-
-      setItems((prev) => [res.data.feedback, ...prev]);
-
-      setAddingOwner("");
-      setAddingContent("");
-
-      alert("Feedback sent!");
+      const res = await axios.post(
+        "http://localhost:5001/api/advisor/feedback",
+        {
+          advisorId,
+          ownerId,
+          content,
+        }
+      );
+      const fb = res.data?.feedback || res.data;
+      if (fb) {
+        setItems((prev) => [fb, ...prev]);
+        if (setFeedback) setFeedback((prev) => [fb, ...prev]);
+      } else if (fetchFeedback) {
+        fetchFeedback();
+      }
+      setContent("");
+      setOwnerId("");
     } catch (err) {
-      console.error(err);
-      alert("Error sending feedback");
+      console.error("Error adding feedback", err);
+    } finally {
+      setSending(false);
     }
   };
 
-  // -----------------------------
-  // DELETE FEEDBACK
-  // -----------------------------
-  const deleteOne = async (id) => {
-    try {
-      await axios.delete(`http://localhost:5001/api/advisor/feedback/${id}`);
-      setItems((prev) => prev.filter((i) => i._id !== id));
-      setActive(null);
-    } catch (err) {
-      console.error(err);
-    }
+  const startEdit = (item) => {
+    setActive(item._id);
+    setEditText(item.content);
+    setShowEdit(true);
   };
 
-  // -----------------------------
-  // SAVE EDIT
-  // -----------------------------
-  const saveEdit = async (id) => {
+  const saveEdit = async () => {
+    if (!editText.trim()) return;
     try {
       const res = await axios.put(
-        `http://localhost:5001/api/advisor/feedback/${id}`,
-        { content: editText }
+        `http://localhost:5001/api/advisor/feedback/${active}`,
+        {
+          advisorId,
+          content: editText,
+        }
       );
-
+      const updated = res.data?.feedback || res.data;
       setItems((prev) =>
-        prev.map((i) => (i._id === id ? res.data : i))
+        prev.map((it) => (it._id === active ? updated : it))
       );
-
+      if (setFeedback) {
+        setFeedback((prev) =>
+          prev.map((it) => (it._id === active ? updated : it))
+        );
+      }
+      setShowEdit(false);
       setActive(null);
       setEditText("");
     } catch (err) {
-      console.error(err);
+      console.error("Error updating feedback", err);
     }
   };
 
-  // -----------------------------
-  // RENDER (ACTIVE FEEDBACK VIEW)
-  // -----------------------------
-  if (active) {
-    const owner = owners.find((o) => o._id === active.ownerId);
+  const deleteFeedback = async (id) => {
+    try {
+      await axios.delete(
+        `http://localhost:5001/api/advisor/feedback/${id}`,
+        {
+          data: { advisorId },
+        }
+      );
+      setItems((prev) => prev.filter((it) => it._id !== id));
+      if (setFeedback) {
+        setFeedback((prev) => prev.filter((it) => it._id !== id));
+      }
+    } catch (err) {
+      console.error("Error deleting feedback", err);
+    }
+  };
 
-    return (
-      <div className="bg-white shadow p-4 rounded-xl mb-5">
-        <button
-          className="btn btn-light border mb-3"
-          onClick={() => setActive(null)}
-        >
-          <FiArrowLeft /> Back
-        </button>
-
-        <h4 className="fw-bold">Feedback Details</h4>
-
-        <p className="text-muted small">
-          {new Date(active.createdAt).toLocaleString()}
-        </p>
-
-        {owner && (
-          <p className="fw-semibold">For: {owner.fullName}</p>
-        )}
-
-        <p className="mt-3">{active.content}</p>
-
-        <div className="mt-4 d-flex gap-3">
-          <button
-            className="btn btn-dark"
-            onClick={() => setEditText(active.content)}
-          >
-            <FiEdit2 /> Edit
-          </button>
-          <button
-            className="btn btn-danger"
-            onClick={() => deleteOne(active._id)}
-          >
-            <FiTrash2 /> Delete
-          </button>
-        </div>
-
-        {editText !== "" && (
-          <div className="mt-4">
-            <textarea
-              className="form-control mb-2"
-              rows={3}
-              value={editText}
-              onChange={(e) => setEditText(e.target.value)}
-            ></textarea>
-
-            <button
-              className="btn btn-primary"
-              onClick={() => saveEdit(active._id)}
-            >
-              Save Changes
-            </button>
-
-            <button
-              className="btn btn-secondary ms-2"
-              onClick={() => setEditText("")}
-            >
-              Cancel
-            </button>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // -----------------------------
-  // RENDER MAIN PANEL
-  // -----------------------------
+  const getOwnerName = (id) => {
+    const owner = owners.find((o) => o._id === id);
+    return owner?.name || owner?.username || "Owner";
+  };
 
   return (
-    <div className="bg-white shadow p-4 rounded-xl mb-6">
-      <h3 className="fw-bold mb-3">Feedback</h3>
+    <div className="support-container">
+      <h1 className="support-title">Feedback</h1>
 
-      {/* ADD FEEDBACK */}
-      <div className="mb-4">
-        <select
-          className="form-select mb-2"
-          value={addingOwner}
-          onChange={(e) => setAddingOwner(e.target.value)}
-        >
-          <option value="">Select owner</option>
-          {owners.map((o) => (
-            <option key={o._id} value={o._id}>
-              {o.fullName}
-            </option>
-          ))}
-        </select>
+      <div className="two-column-grid">
+        {/* LEFT: FORM */}
+        <div className="support-card">
+          <h2 className="card-title">Create Feedback</h2>
 
-        <textarea
-          className="form-control"
-          rows={2}
-          placeholder="Write feedback..."
-          value={addingContent}
-          onChange={(e) => setAddingContent(e.target.value)}
-        ></textarea>
-
-        <button className="btn btn-dark mt-2" onClick={addFeedback}>
-          Add Feedback
-        </button>
-      </div>
-
-      {/* FEEDBACK LIST */}
-      <div className="d-flex flex-column gap-3">
-        {items.map((fb) => {
-          const owner = owners.find((o) => o._id === fb.ownerId);
-
-          return (
-            <div
-              key={fb._id}
-              className="card-neo p-3 d-flex justify-content-between"
-            >
-              <div>
-                <div className="text-muted small">
-                  {new Date(fb.createdAt).toLocaleString()}
-                </div>
-
-                {owner && (
-                  <div className="fw-semibold small">
-                    Feedback for: {owner.fullName}
-                  </div>
-                )}
-
-                <div>{fb.content}</div>
-              </div>
-
-              <button
-                className="btn btn-outline-dark"
-                onClick={() => setActive(fb)}
+          <div className="ticket-form">
+            <div className="form-row">
+              <label className="form-label">Owner</label>
+              <select
+                className="ticket-select"
+                value={ownerId}
+                onChange={(e) => setOwnerId(e.target.value)}
               >
-                <FiEye /> View
-              </button>
+                <option value="">Select owner</option>
+                {owners.map((o) => (
+                  <option key={o._id} value={o._id}>
+                    {o.name || o.username}
+                  </option>
+                ))}
+              </select>
             </div>
-          );
-        })}
+
+            <div className="form-row">
+              <label className="form-label">Feedback</label>
+              <textarea
+                className="ticket-textarea"
+                rows={4}
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="Write clear, actionable feedback..."
+              />
+            </div>
+
+            <button
+              className="submit-btn"
+              onClick={addFeedback}
+              disabled={sending}
+            >
+              {sending ? "Sending..." : "Send feedback"}
+            </button>
+          </div>
+        </div>
+
+        {/* RIGHT: LIST */}
+        <div className="tickets-section">
+          <div className="d-flex justify-content-between align-items-center" style={{ marginBottom: "0.75rem" }}>
+            <h2 className="section-title">All Feedback</h2>
+            <button className="submit-btn" style={{ padding: "0.4rem 1.2rem" }} onClick={fetchFeedback}>
+              Refresh
+            </button>
+          </div>
+
+          {items.length === 0 && (
+            <div className="empty-state">No feedback yet.</div>
+          )}
+
+          {items.length > 0 && (
+            <div className="tickets-list">
+              {items.map((fb) => {
+                const isEditing = showEdit && active === fb._id;
+                return (
+                  <div key={fb._id} className="ticket-item">
+                    <div className="ticket-item-left">
+                      <div className="ticket-icon">💬</div>
+                      <div className="ticket-info">
+                        <div className="ticket-title">
+                          Feedback for: {getOwnerName(fb.ownerId || fb.owner)}
+                        </div>
+                        <div className="ticket-date">
+                          {new Date(fb.createdAt).toLocaleString()}
+                        </div>
+                        {!isEditing && (
+                          <p style={{ marginTop: "0.35rem", fontSize: "0.9rem" }}>
+                            {fb.content}
+                          </p>
+                        )}
+                        {isEditing && (
+                          <textarea
+                            className="ticket-textarea"
+                            rows={3}
+                            value={editText}
+                            onChange={(e) => setEditText(e.target.value)}
+                            style={{ marginTop: "0.5rem" }}
+                          />
+                        )}
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
+                      {!isEditing ? (
+                        <>
+                          <button
+                            className="submit-btn"
+                            style={{ padding: "0.35rem 1rem" }}
+                            onClick={() => startEdit(fb)}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            className="submit-btn"
+                            style={{
+                              padding: "0.35rem 1rem",
+                              background: "#FF5757",
+                            }}
+                            onClick={() => deleteFeedback(fb._id)}
+                          >
+                            Delete
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            className="submit-btn"
+                            style={{ padding: "0.35rem 1rem" }}
+                            onClick={saveEdit}
+                          >
+                            Save
+                          </button>
+                          <button
+                            className="submit-btn"
+                            style={{
+                              padding: "0.35rem 1rem",
+                              background: "#e5e7eb",
+                              color: "#082830",
+                              boxShadow: "none",
+                            }}
+                            onClick={() => {
+                              setShowEdit(false);
+                              setActive(null);
+                              setEditText("");
+                            }}
+                          >
+                            Cancel
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -188,4 +188,111 @@ router.put("/feedback/:id", async (req, res) => {
   }
 });
 
+/* ======================================================
+   ADVISOR — GET ALL TICKETS
+====================================================== */
+router.get("/tickets/:advisorId", async (req, res) => {
+  try {
+    const advisorId = req.params.advisorId;
+
+    const tickets = await Assignment.find({ advisorId })
+      .sort({ createdAt: -1 });
+
+    return res.json(tickets);
+  } catch (err) {
+    console.error("GET tickets error:", err);
+    return res.status(500).json({ msg: "Server error", error: err.message });
+  }
+});
+
+/* ======================================================
+   ADVISOR — GET NOTIFICATIONS
+====================================================== */
+router.get("/notifications/:advisorId", async (req, res) => {
+  try {
+    const advisorId = req.params.advisorId;
+
+    const list = await Notification.find({ advisorId })
+      .sort({ createdAt: -1 });
+
+    return res.json(list);
+  } catch (err) {
+    console.error("GET notifications error:", err);
+    return res.status(500).json({ msg: "Server error", error: err.message });
+  }
+});
+
+/* ======================================================
+   ADVISOR — GET FEEDBACK LIST (short route)
+====================================================== */
+router.get("/feedback/:advisorId", async (req, res) => {
+  try {
+    const list = await Feedback.find({ advisorId: req.params.advisorId })
+      .sort({ createdAt: -1 });
+
+    return res.json(list);
+  } catch (err) {
+    console.error("GET feedback error:", err);
+    return res.status(500).json({ msg: "Server error", error: err.message });
+  }
+});
+
+// ======================================================
+// GET OWNERS LINKED TO AN ADVISOR
+// ======================================================
+router.get("/owners/:advisorId", async (req, res) => {
+  try {
+    const advisorId = req.params.advisorId;
+
+    const owners = await Owner.find({ advisor: advisorId })
+      .select("_id fullName username")   // فقط اللي تحتاجينه
+      .lean();
+
+    return res.json({ success: true, owners });
+  } catch (err) {
+    console.error("GET OWNERS ERROR:", err);
+    return res.status(500).json({ msg: "Server error", error: err.message });
+  }
+});
+/* ======================================================
+   ADD RECOMMENDATION
+====================================================== */
+router.post("/recommendations", async (req, res) => {
+  try {
+    const { advisorId, ownerId, text } = req.body;
+
+    if (!advisorId || !ownerId || !text?.trim()) {
+      return res.status(400).json({ msg: "Missing required fields" });
+    }
+
+    const newRec = await Recommendation.create({
+      advisorId,
+      ownerId,
+      text
+    });
+
+    return res.json({ success: true, recommendation: newRec });
+  } catch (err) {
+    console.error("Recommendation error:", err);
+    res.status(500).json({ msg: "Server error", error: err.message });
+  }
+});
+
+/* ======================================================
+   GET RECOMMENDATIONS
+====================================================== */
+router.get("/recommendations/:advisorId", async (req, res) => {
+  try {
+    const list = await Recommendation.find({
+      advisorId: req.params.advisorId,
+    }).sort({ createdAt: -1 });
+
+    return res.json(list);
+  } catch (err) {
+    console.error("Get recommendations error:", err);
+    res.status(500).json({ msg: "Server error", error: err.message });
+  }
+});
+
+
 module.exports = router;

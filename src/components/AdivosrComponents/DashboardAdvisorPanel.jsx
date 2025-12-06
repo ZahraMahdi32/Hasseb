@@ -2,30 +2,53 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import AnalyzerPanel from "./AnalyzerPanel.jsx";
 
-export default function DashboardAdvisorPanel({ advisorId }) {
+export default function DashboardAdvisorPanel({
+  advisorId,
+  tickets = [],
+  notifications = [],
+  feedback = [],
+  setTab,
+}) {
   const [owners, setOwners] = useState([]);
   const [selectedOwner, setSelectedOwner] = useState(null);
   const [ownerData, setOwnerData] = useState(null);
   const [recommendationText, setRecommendationText] = useState("");
+  const [sending, setSending] = useState(false);
+
+  // NEW — support tickets exactly like SupportPanel2
+  const [supportTickets, setSupportTickets] = useState([]);
 
   useEffect(() => {
-    fetchDashboard();
-  }, []);
+    if (!advisorId) return;
+    fetchOwners();
+    fetchSupportTickets();
+  }, [advisorId]);
 
-  // ================================
-  // FETCH OWNERS ONLY (NOT FEEDBACK)
-  // ================================
-  const fetchDashboard = async () => {
+  // Get owners for dashboard
+  const fetchOwners = async () => {
     try {
       const res = await axios.get(
         `http://localhost:5001/api/advisor/dashboard/${advisorId}`
       );
-
-      console.log("DASHBOARD OWNERS:", res.data.owners);
-
       setOwners(res.data.owners || []);
     } catch (err) {
       console.error("Dashboard load error:", err);
+    }
+  };
+
+  // NEW — fetch tickets EXACTLY like SupportPanel2
+  const fetchSupportTickets = async () => {
+    try {
+      const user = JSON.parse(localStorage.getItem("loggedUser"));
+      const fromUserId = user?.userId;
+
+      const res = await axios.get("http://localhost:5001/api/tickets", {
+        params: { role: "advisor", userId: fromUserId },
+      });
+
+      setSupportTickets(res.data || []);
+    } catch (err) {
+      console.error("Dashboard support tickets error:", err);
     }
   };
 
@@ -37,6 +60,7 @@ export default function DashboardAdvisorPanel({ advisorId }) {
   const submitRecommendation = async () => {
     if (!recommendationText.trim() || !selectedOwner) return;
 
+    setSending(true);
     try {
       await axios.post("http://localhost:5001/api/advisor/suggestions", {
         advisorId,
@@ -44,99 +68,170 @@ export default function DashboardAdvisorPanel({ advisorId }) {
         suggestion: { text: recommendationText },
       });
 
-      alert("Recommendation sent!");
       setRecommendationText("");
     } catch (err) {
       console.error("Error sending recommendation:", err);
+    } finally {
+      setSending(false);
     }
   };
 
-  // ================================
-  // UI
-  // ================================
+  // FINAL — THIS IS NOW IDENTICAL TO SUPPORT PANEL
+  const openTickets = supportTickets.filter((t) => t.status === "open").length;
+
+  const unreadNotifications =
+    Array.isArray(notifications) &&
+    notifications.filter((n) => !n.read).length;
+
+  const feedbackCount = Array.isArray(feedback) ? feedback.length : 0;
+
   return (
-    <div className="p-5 flex gap-6">
+    <div className="support-container">
+      {/* ===== TITLE ===== */}
+      <h1 className="support-title">Advisor Dashboard</h1>
 
-      {/* LEFT: OWNERS LIST */}
-      <div className="w-1/3 bg-white shadow p-4 rounded-xl">
-        <h2 className="text-xl font-semibold mb-3">Your Owners</h2>
+      {/* ===== STATS CARDS ===== */}
+      <div className="stats-grid">
 
-        {owners.length === 0 && (
-          <p className="text-gray-500">No owners assigned yet.</p>
-        )}
-
-        {owners.map((owner) => (
-          <div
-            key={owner._id}
-            onClick={() => handleSelectOwner(owner)}
-            className={`p-3 border rounded-lg mb-2 cursor-pointer transition ${
-              selectedOwner?._id === owner._id
-                ? "bg-blue-100 border-blue-600"
-                : "bg-gray-50 hover:bg-gray-100"
-            }`}
-          >
-            <p className="font-bold">{owner.fullName}</p>
-            <p className="text-gray-500 text-sm">{owner.username}</p>
+        {/* OPEN TICKETS — CLICKABLE */}
+        <div
+          className="stat-card clickable"
+          onClick={() => setTab("support")}
+          style={{ cursor: "pointer" }}
+        >
+          <div className="stat-icon-wrapper stat-icon-blue">📩</div>
+          <div className="stat-content">
+            <span className="stat-label">Open Tickets</span>
+            <span className="stat-value">{openTickets}</span>
           </div>
-        ))}
+        </div>
+
+        {/* UNREAD NOTIFICATIONS — CLICKABLE */}
+        <div
+          className="stat-card clickable"
+          onClick={() => setTab("notifications")}
+          style={{ cursor: "pointer" }}
+        >
+          <div className="stat-icon-wrapper stat-icon-yellow">🔔</div>
+          <div className="stat-content">
+            <span className="stat-label">Unread Notifications</span>
+            <span className="stat-value">{unreadNotifications || 0}</span>
+          </div>
+        </div>
+
+        {/* FEEDBACK — CLICKABLE */}
+        <div
+          className="stat-card clickable"
+          onClick={() => setTab("feedback")}
+          style={{ cursor: "pointer" }}
+        >
+          <div className="stat-icon-wrapper stat-icon-green">💬</div>
+          <div className="stat-content">
+            <span className="stat-label">Total Feedback</span>
+            <span className="stat-value">{feedbackCount}</span>
+          </div>
+        </div>
       </div>
 
-      {/* RIGHT: OWNER DETAILS */}
-      <div className="w-2/3">
+      {/* ===== MAIN GRID ===== */}
+      <div className="two-column-grid">
 
-        {!selectedOwner ? (
-          <div className="text-gray-600 text-center mt-20">
-            Select an owner to view details.
-          </div>
-        ) : (
-          <div>
-            <h2 className="text-2xl font-bold mb-2">
-              {selectedOwner.fullName} — Business Overview
-            </h2>
+        {/* LEFT: OWNERS */}
+        <div className="support-card">
+          <h2 className="card-title">Assigned Owners</h2>
 
-            {!ownerData ? (
-              <p className="text-red-500">
-                This owner has not uploaded business data.
-              </p>
-            ) : (
-              <div className="bg-white shadow rounded-xl p-4 mb-5">
-                <h3 className="font-semibold text-lg mb-2">Business Data</h3>
+          {owners.length === 0 && (
+            <div className="empty-state">No owners assigned yet.</div>
+          )}
 
-                <div className="grid grid-cols-2 gap-3">
-                  <p><strong>Fixed Cost:</strong> {ownerData.fixedCost}</p>
-                  <p><strong>Variable Cost Per Unit:</strong> {ownerData.products?.[0]?.variableCostPerUnit}</p>
-                  <p><strong>Price Per Unit:</strong> {ownerData.products?.[0]?.pricePerUnit}</p>
-                  <p><strong>Avg Units:</strong> {ownerData.avgMonthlyUnits}</p>
+          {owners.length > 0 && (
+            <div className="tickets-list">
+              {owners.map((owner) => (
+                <div
+                  key={owner._id}
+                  className="ticket-item"
+                  onClick={() => handleSelectOwner(owner)}
+                >
+                  <div className="ticket-item-left">
+                    <div className="ticket-icon">👤</div>
+                    <div className="ticket-info">
+                      <div className="ticket-title">{owner.fullName}</div>
+                      <div className="ticket-date">{owner.username}</div>
+                    </div>
+                  </div>
+                  <span className="ticket-status status-open">Owner</span>
                 </div>
-              </div>
-            )}
-
-            <AnalyzerPanel businessData={ownerData} />
-
-            {/* RECOMMENDATION BOX */}
-            <div className="bg-white shadow p-4 rounded-xl mt-6">
-              <h3 className="font-semibold mb-2">Write Recommendation</h3>
-
-              <textarea
-                value={recommendationText}
-                onChange={(e) => setRecommendationText(e.target.value)}
-                rows={4}
-                className="w-full border rounded-lg p-2"
-              />
-
-              <button
-                onClick={submitRecommendation}
-                className="mt-3 bg-blue-600 text-white px-4 py-2 rounded-lg"
-              >
-                Submit Recommendation
-              </button>
+              ))}
             </div>
+          )}
+        </div>
 
-          </div>
-        )}
+        {/* RIGHT: DETAILS + ANALYZER + RECOMMENDATION */}
+        <div className="tickets-section">
+          {!selectedOwner ? (
+            <div className="empty-state">
+              Select an owner to view business details.
+            </div>
+          ) : (
+            <>
+              <h2 className="section-title">
+                {selectedOwner.fullName} — Business Overview
+              </h2>
+
+              {/* BUSINESS DATA */}
+              {!ownerData ? (
+                <p className="support-error">
+                  This owner has not uploaded business data.
+                </p>
+              ) : (
+                <div style={{ marginBottom: "1.5rem" }}>
+                  <h3 className="card-title">Business Data</h3>
+
+                  <div className="stats-grid" style={{ marginBottom: 0 }}>
+                    <div className="stat-card">
+                      <div className="stat-content">
+                        <span className="stat-label">Fixed Cost</span>
+                        <span className="stat-value">{ownerData.fixedCost}</span>
+                      </div>
+                    </div>
+
+                    <div className="stat-card">
+                      <div className="stat-content">
+                        <span className="stat-label">Variable Cost</span>
+                        <span className="stat-value">
+                          {ownerData.products?.[0]?.variableCostPerUnit}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="stat-card">
+                      <div className="stat-content">
+                        <span className="stat-label">Price / Unit</span>
+                        <span className="stat-value">
+                          {ownerData.products?.[0]?.pricePerUnit}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="stat-card">
+                      <div className="stat-content">
+                        <span className="stat-label">Avg Units</span>
+                        <span className="stat-value">
+                          {ownerData.avgMonthlyUnits}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* RECOMMENDATION FORM */}
+              
+            </>
+          )}
+        </div>
 
       </div>
-
     </div>
   );
 }

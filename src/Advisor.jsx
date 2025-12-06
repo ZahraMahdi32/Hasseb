@@ -1,3 +1,4 @@
+// Advisor.jsx
 import React, { useState, useEffect } from "react";
 import { Header, Sidebar } from "./components/AdivosrComponents/AdvisorLayout.jsx";
 
@@ -14,73 +15,159 @@ export default function Advisor() {
   const advisorId = user?.userId;
 
   const [tab, setTab] = useState("dashboard");
-  const [owners, setOwners] = useState([]);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const handleOpenMenu = () => setMenuOpen(true);
+  const handleCloseMenu = () => setMenuOpen(false);
+
+  const [tickets, setTickets] = useState([]);
+  const [notifications, setNotifications] = useState([]);
   const [feedback, setFeedback] = useState([]);
-  const [advisor, setAdvisor] = useState(null);
+  const [owners, setOwners] = useState([]);
 
-  // ⭐ NEW: sidebar state
-  const [isSidebarOpen, setSidebarOpen] = useState(false);
+  // ----------------------- FIXED API CALLS -----------------------
 
-  useEffect(() => {
-    loadDashboardData();
-  }, []);
+  const fetchTickets = async () => {
+    try {
+      const res = await fetch(
+        `http://localhost:5001/api/advisor/tickets/${advisorId}`
+      );
+      const data = await res.json();
+      if (data?.tickets) setTickets(data.tickets);
+    } catch (err) {
+      console.error("Error fetching tickets", err);
+    }
+  };
 
-  const loadDashboardData = async () => {
+  const fetchNotifications = async () => {
+    try {
+      const res = await fetch(
+        `http://localhost:5001/api/advisor/notifications/${advisorId}`
+      );
+      const data = await res.json();
+      if (data?.notifications) setNotifications(data.notifications);
+    } catch (err) {
+      console.error("Error fetching notifications", err);
+    }
+  };
+
+  // ---- FIX: USE CORRECT ENDPOINT ----
+  const fetchFeedback = async () => {
+    try {
+      const res = await fetch(
+        `http://localhost:5001/api/advisor/feedback/all/${advisorId}`
+      );
+      const data = await res.json();
+
+      setFeedback(data);
+      
+      // Owners come from Dashboard API, not feedback
+      fetchOwners();
+    } catch (err) {
+      console.error("Error fetching feedback", err);
+    }
+  };
+
+  // ---- FIX: GET OWNERS FROM DASHBOARD API ----
+  const fetchOwners = async () => {
     try {
       const res = await fetch(
         `http://localhost:5001/api/advisor/dashboard/${advisorId}`
       );
       const data = await res.json();
-
-      setAdvisor(data.advisor || null);
-      setOwners(data.owners || []);
-      setFeedback(data.feedback || []);
+      if (data?.owners) setOwners(data.owners);
     } catch (err) {
-      console.error("Dashboard load error:", err);
+      console.error("Error fetching owners", err);
+    }
+  };
+
+  // ----------------------------------------------------------------
+
+  useEffect(() => {
+    if (!advisorId) return;
+
+    fetchTickets();
+    fetchNotifications();
+    fetchFeedback();  
+    fetchOwners();
+
+  }, [advisorId]);
+
+  const openCount = tickets.filter((t) => t.status === "open").length;
+
+  const renderTab = () => {
+    switch (tab) {
+      case "dashboard":
+        return (
+          <DashboardAdvisorPanel
+            advisorId={advisorId}
+            tickets={tickets}
+            notifications={notifications}
+            feedback={feedback}
+            setTab={setTab}
+            openCount={openCount}
+          />
+        );
+
+      case "analyzer":
+        return <AnalyzerPanel advisorId={advisorId} />;
+
+      case "notifications":
+        return (
+          <NotificationsPanel
+            advisorId={advisorId}
+            notifications={notifications}
+            setNotifications={setNotifications}
+            fetchNotifications={fetchNotifications}
+          />
+        );
+
+      case "account":
+        return <AccountPanel advisorId={advisorId} />;
+
+      case "support":
+        return (
+          <SupportPanel
+            tickets={tickets}
+            setTickets={setTickets}
+            fetchTickets={fetchTickets}
+            setTab={setTab}
+          />
+        );
+
+      case "recommendations":
+        return <RecommendationsPanel advisorId={advisorId} owners={owners} />;
+
+      case "feedback":
+        return (
+          <FeedbackPanel
+            feedback={feedback}
+            owners={owners}
+            advisorId={advisorId}
+            setFeedback={setFeedback}
+            fetchFeedback={fetchFeedback}
+          />
+        );
+
+      default:
+        return null;
     }
   };
 
   return (
-    <div className="app-wrapper">
+    <div className="advisor-layout">
+      <Header onOpenMenu={handleOpenMenu} />
 
-      {/* HEADER with onOpenMenu */}
-      <Header onOpenMenu={() => setSidebarOpen(true)} />
+      <div className="advisor-body">
+        <Sidebar
+          tab={tab}
+          setTab={setTab}
+          isOpen={menuOpen}
+          onClose={handleCloseMenu}
+        />
 
-      {/* SIDEBAR with proper handlers */}
-      <Sidebar
-        tab={tab}
-        setTab={setTab}
-        isOpen={isSidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        onLogout={() => {
-          localStorage.removeItem("loggedUser");
-          window.location.href = "/auth";
-        }}
-      />
-
-      <main className="container-fluid py-4">
-
-        {tab === "dashboard" && (
-          <DashboardAdvisorPanel owners={owners} advisorId={advisorId} />
-        )}
-
-        {tab === "feedback" && (
-          <FeedbackPanel feedback={feedback} owners={owners} advisorId={advisorId} />
-        )}
-
-        {tab === "analyzer" && <AnalyzerPanel owners={owners} />}
-
-        {tab === "recommendations" && (
-          <RecommendationsPanel advisorId={advisorId} owners={owners} />
-        )}
-
-        {tab === "notifications" && <NotificationsPanel advisorId={advisorId} />}
-
-        {tab === "account" && <AccountPanel advisor={advisor} />}
-
-        {tab === "support" && (<SupportPanel advisorId={advisorId} />)}
-
-      </main>
+        <main className="advisor-content">{renderTab()}</main>
+      </div>
     </div>
   );
 }

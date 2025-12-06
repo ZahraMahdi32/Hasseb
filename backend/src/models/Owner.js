@@ -5,10 +5,8 @@ const OwnerSchema = new mongoose.Schema({
   email: String,
   businessName: String,
 
-  // ⭐ ADD USERNAME HERE
   username: {
     type: String,
-    required: true,
     unique: true,
   },
 

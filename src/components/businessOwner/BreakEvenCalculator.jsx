@@ -165,11 +165,12 @@ export default function BreakEvenCalculator({ baseData, onUpdate }) {
                             value={selectedProductId || ""}
                             onChange={(e) => handleProductChange(e.target.value)}
                         >
-                            {baseData.products.map((p) => (
-                                <option key={p.id} value={p.id}>
-                                    {p.name}
-                                </option>
-                            ))}
+                    {baseData.products.map((p, index) => (
+                        <option key={index} value={index}>
+                            {p.name}
+                        </option>
+                    ))}
+
                         </select>
                     </div>
                 ) : (

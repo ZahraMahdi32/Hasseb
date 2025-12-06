@@ -5,16 +5,19 @@ const BusinessDataSchema = new mongoose.Schema(
     owner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Owner",
-      required: true
+      required: false,
+      default: null
     },
 
-    businessName: { type: String, default: "My Business" },
+    businessName: { type: String, default: "" },
 
     products: [
       {
         name: String,
-        cost: Number,
-        price: Number
+        price: Number,
+        variableCost: Number,
+        fixedCost: Number,
+        avgUnits: Number
       }
     ],
 
@@ -23,26 +26,18 @@ const BusinessDataSchema = new mongoose.Schema(
     cashFlow: [
       {
         month: String,
-        revenue: Number,
-        expenses: Number,
-        netCashFlow: Number
+        inflow: Number,
+        outflow: Number
       }
     ],
 
     pricingScenarios: [
       {
-        scenario: String,  
+        scenario: String,
         price: Number,
-        units: Number,
-        revenue: Number,
-        variableCost: Number,
-        cm: Number,
-        profit: Number
+        units: Number
       }
-    ],
-
-    fileName: String,
-    fileSize: Number
+    ]
   },
   { timestamps: true }
 );
