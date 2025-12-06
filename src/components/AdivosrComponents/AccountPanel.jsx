@@ -37,6 +37,7 @@ export default function AccountPanel({ settings, setSettings }) {
 
         <p><strong>Name:</strong> {user.fullName}</p>
         <p><strong>Email:</strong> {user.email}</p>
+        <p><strong>Username:</strong> {user.username}</p>
         <p><strong>Role:</strong> {user.role}</p>
       </div>
 
