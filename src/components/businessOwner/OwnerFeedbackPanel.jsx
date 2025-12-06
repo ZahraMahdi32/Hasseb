@@ -15,19 +15,19 @@ export default function OwnerFeedbackPanel() {
 
       const ownerId = user.userId;
 
-      const res = await fetch("http://localhost:5001/api/advisor/feedback/all");
+      const res = await fetch(
+        `http://localhost:5001/api/advisor/feedback/owner/${ownerId}`
+      );
+
       const data = await res.json();
-
-      // Filter only feedback that belongs to this owner
-      const filtered = data.filter((f) => f.ownerId === ownerId);
-
-      setFeedback(filtered);
+      setFeedback(data);
     } catch (err) {
       console.error("Error loading feedback:", err);
     } finally {
       setLoading(false);
     }
   };
+
 
   if (loading) return <div className="p-4">Loading feedback…</div>;
 

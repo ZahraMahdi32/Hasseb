@@ -4,13 +4,12 @@ const RecommendationSchema = new mongoose.Schema(
   {
     advisorId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     ownerId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    scenarioId: { type: mongoose.Schema.Types.ObjectId, required: true }, // مهم جداً
 
-    suggestion: {
-      price: Number,
-      variableCost: Number,
-      fixedCost: Number,
-      units: Number,
-      breakEvenUnits: Number
+    text: {
+      type: String,
+      required: true,
+      trim: true,
     }
   },
   { timestamps: true }

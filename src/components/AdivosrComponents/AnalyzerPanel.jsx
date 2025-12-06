@@ -86,6 +86,15 @@ export default function AnalyzerPanel({ advisorId, setTab }) {
       name: s.scenario,
       profit: s.profit
     })) || [];
+    // ================================================
+  // BREAK-EVEN SCENARIOS CHART
+  // ================================================
+  const breakEvenData =
+    businessData?.scenarios?.map((s) => ({
+      name: s.scenarioName || s.productName || "Scenario",
+      sales: Number(s.breakEvenSales || 0),
+    })) || [];
+
 
   const positiveMonths =
     businessData?.cashFlow?.filter((c) => c.netCashFlow > 0).length || 0;

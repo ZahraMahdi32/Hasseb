@@ -411,3 +411,38 @@ body[data-theme="dark"] .recommendation-list li {
 body[data-theme="dark"] .recommendation-footnote {
     color: #9ca3af;
 }
+.scenario-recommendation-card {
+    background: #F5F7FA;        /* يناسب الأبيض والأزرق */
+    border: 1px solid #D3D8DE;  /* ناعم وشيك */
+    border-radius: 14px;
+    padding: 14px 18px;
+    margin-top: 12px;
+    color: #333;                /* وضوح عالي */
+    box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+}
+
+.scenario-recommendation-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #2A2E35;
+    margin-bottom: 8px;
+}
+
+.scenario-recommendation-text {
+    font-size: 14px;
+    color: #444;
+    margin-bottom: 10px;
+}
+
+.rec-item {
+    background: #E8ECF1;      /* حيادي وجميل */
+    padding: 10px 12px;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    color: #222;
+    border: 1px solid #D0D5DA;
+}
+
+.rec-item:last-child {
+    margin-bottom: 0;
+}

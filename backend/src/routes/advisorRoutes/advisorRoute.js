@@ -17,6 +17,7 @@ const Feedback = require("../../models/advisorModels/Feedback");
 const Recommendation = require("../../models/advisorModels/Recommendation");
 const Notification = require("../../models/advisorModels/Notification");
 const Assignment = require("../../models/Assignment");
+const Ticket = require("../../models/Ticket");
 
 // RISK ENGINE
 const { evaluateOwnerRisk } = require("../../utils/riskEngine");
@@ -29,7 +30,7 @@ router.get("/ping", (req, res) => {
 });
 
 // ======================================================
-// DASHBOARD — MERGED VERSION (HEAD + other branch)
+// DASHBOARD
 // ======================================================
 router.get("/dashboard/:advisorId", async (req, res) => {
   try {
@@ -38,66 +39,60 @@ router.get("/dashboard/:advisorId", async (req, res) => {
     const advisor = await Advisor.findById(advisorId);
     if (!advisor) return res.status(404).json({ msg: "Advisor not found" });
 
-    // 1) Owners (from HEAD approach)
     const owners = await Owner.find({ advisor: advisorId })
       .populate("businessData")
       .lean();
 
-    // 2) Their usernames
-    const ownerIds = owners.map((o) => o._id);
-    const users = await User.find({ _id: { $in: ownerIds } }, { username: 1 }).lean();
+    const ownersWithData = owners.map((o) => ({
+      ...o,
+      username: o.username || undefined,
+    }));
 
-    const userById = {};
-    users.forEach((u) => (userById[u._id.toString()] = u.username));
-
-    // 3) Attach business data for each owner
-    const ownersWithData = await Promise.all(
-      owners.map(async (o) => {
-        const username = userById[o._id.toString()];
-        let businessData = null;
-        if (username) {
-          businessData = await BusinessData.findOne({ username }).lean();
-        }
-        return { ...o, username, businessData };
-      })
-    );
-
-    // 4) GET FEEDBACK
-    const feedback = await Feedback.find({ advisorId }).sort({ createdAt: -1 });
-
-    // 5) Run risk engine
     const riskData = ownersWithData.map((o) =>
       evaluateOwnerRisk(o.businessData || {})
     );
 
-    // 6) Auto notifications (keep HEAD version)
-    for (const r of riskData) {
-      if (r.level === "High") {
-        const exists = await Notification.findOne({
-          advisorId,
-          message: { $regex: r.ownerId?.toString() || "" },
-          createdAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
-        });
-
-        if (!exists) {
-          await Notification.create({
-            advisorId,
-            title: "High Risk Alert",
-            message: `Risk level is HIGH for one of your owners.`,
-          });
-        }
-      }
-    }
-
     return res.json({
       advisor,
       owners: ownersWithData,
-      feedback,
       riskData,
     });
+
   } catch (err) {
     console.error("Dashboard error:", err);
     return res.status(500).json({ msg: "Server error", error: err.message });
+  }
+});
+
+// ======================================================
+// ⭐ FIX: TICKETS ROUTE FOR ADVISOR PANEL
+// ======================================================
+router.get("/tickets/:advisorId", async (req, res) => {
+  try {
+    const tickets = await Ticket.find({
+      advisorId: req.params.advisorId
+    }).sort({ createdAt: -1 });
+
+    return res.json(tickets); // ✔ must return array
+  } catch (err) {
+    console.error("Tickets error:", err);
+    return res.status(500).json({ msg: "Server error" });
+  }
+});
+
+// ======================================================
+// ⭐⭐ FIX: NOTIFICATIONS ROUTE (THE ERROR YOU HAD)
+// ======================================================
+router.get("/notifications/:advisorId", async (req, res) => {
+  try {
+    const notifications = await Notification.find({
+      advisorId: req.params.advisorId
+    }).sort({ createdAt: -1 });
+
+    return res.json(notifications); // ✔ FIX — MUST return array directly
+  } catch (err) {
+    console.error("Notifications error:", err);
+    return res.status(500).json({ msg: "Server error" });
   }
 });
 
@@ -116,9 +111,9 @@ router.post("/feedback", async (req, res) => {
 
     return res.json({
       success: true,
-      msg: "Feedback added successfully",
       feedback: fb,
     });
+
   } catch (err) {
     console.error("Feedback error:", err);
     return res.status(500).json({ msg: "Server error", error: err.message });
@@ -130,9 +125,10 @@ router.post("/feedback", async (req, res) => {
 // ======================================================
 router.get("/feedback/all/:advisorId", async (req, res) => {
   try {
-    const advisorId = req.params.advisorId;
+    const list = await Feedback.find({
+      advisorId: req.params.advisorId,
+    }).sort({ createdAt: -1 });
 
-    const list = await Feedback.find({ advisorId }).sort({ createdAt: -1 });
     return res.json(list);
   } catch (err) {
     return res.status(500).json({ msg: "Server error", error: err.message });
@@ -179,33 +175,47 @@ router.put("/feedback/:id", async (req, res) => {
 });
 
 // ======================================================
-// SUGGESTIONS — ADD
+// ⭐ FINAL RECOMMENDATION SYSTEM
 // ======================================================
-router.post("/suggestions", async (req, res) => {
+router.post("/recommendations", async (req, res) => {
   try {
-    const { advisorId, ownerId, suggestion } = req.body;
+    const { advisorId, ownerId, scenarioId, text } = req.body;
 
-    if (!advisorId || !ownerId || !suggestion) {
-      return res.status(400).json({ msg: "Missing fields" });
+    if (!advisorId || !ownerId || !scenarioId || !text?.trim()) {
+      return res.status(400).json({ msg: "Missing required fields" });
     }
 
-    const rec = await Recommendation.create({
+    const newRec = await Recommendation.create({
       advisorId,
       ownerId,
-      suggestion,
+      scenarioId,
+      text,
     });
 
-    return res.status(201).json(rec);
+    return res.json({ success: true, recommendation: newRec });
+
   } catch (err) {
-    console.error("Suggestion error:", err);
-    return res.status(500).json({ msg: "Server error" });
+    console.error("Recommendation error:", err);
+    return res.status(500).json({ msg: "Server error", error: err.message });
   }
 });
 
-// ======================================================
-// SUGGESTIONS — GET FOR OWNER
-// ======================================================
-router.get("/suggestions/:ownerId", async (req, res) => {
+// Advisor ID
+router.get("/recommendations/:advisorId", async (req, res) => {
+  try {
+    const list = await Recommendation.find({
+      advisorId: req.params.advisorId,
+    }).sort({ createdAt: -1 });
+
+    return res.json(list);
+  } catch (err) {
+    console.error("Get recommendations error:", err);
+    return res.status(500).json({ msg: "Server error", error: err.message });
+  }
+});
+
+// Owner ID
+router.get("/recommendations/owner/:ownerId", async (req, res) => {
   try {
     const list = await Recommendation.find({
       ownerId: req.params.ownerId,
@@ -213,46 +223,7 @@ router.get("/suggestions/:ownerId", async (req, res) => {
 
     return res.json(list);
   } catch (err) {
-    console.error("Suggestions error:", err);
-    return res.status(500).json({ msg: "Server error" });
-  }
-});
-
-// ======================================================
-// NOTIFICATIONS (ADD)
-// ======================================================
-router.post("/notifications", async (req, res) => {
-  try {
-    const { advisorId, title, message } = req.body;
-
-    if (!advisorId || !title || !message) {
-      return res.status(400).json({ msg: "Missing fields" });
-    }
-
-    const notif = await Notification.create({
-      advisorId,
-      title,
-      message,
-    });
-
-    return res.status(201).json(notif);
-  } catch (err) {
-    console.error("Notification create error:", err);
-    return res.status(500).json({ msg: "Server error" });
-  }
-});
-
-// ======================================================
-// NOTIFICATIONS — GET
-// ======================================================
-router.get("/notifications/:advisorId", async (req, res) => {
-  try {
-    const list = await Notification.find({ advisorId: req.params.advisorId })
-      .sort({ createdAt: -1 });
-
-    return res.json(list);
-  } catch (err) {
-    console.error("GET notifications error:", err);
+    console.error("Owner Recommendations error:", err);
     return res.status(500).json({ msg: "Server error" });
   }
 });
@@ -274,47 +245,7 @@ router.get("/owners/:advisorId", async (req, res) => {
 });
 
 // ======================================================
-// RECOMMENDATION — ADD
-// ======================================================
-router.post("/recommendations", async (req, res) => {
-  try {
-    const { advisorId, ownerId, text } = req.body;
-
-    if (!advisorId || !ownerId || !text?.trim()) {
-      return res.status(400).json({ msg: "Missing required fields" });
-    }
-
-    const newRec = await Recommendation.create({
-      advisorId,
-      ownerId,
-      text,
-    });
-
-    return res.json({ success: true, recommendation: newRec });
-  } catch (err) {
-    console.error("Recommendation error:", err);
-    return res.status(500).json({ msg: "Server error", error: err.message });
-  }
-});
-
-// ======================================================
-// RECOMMENDATION — GET
-// ======================================================
-router.get("/recommendations/:advisorId", async (req, res) => {
-  try {
-    const list = await Recommendation.find({
-      advisorId: req.params.advisorId,
-    }).sort({ createdAt: -1 });
-
-    return res.json(list);
-  } catch (err) {
-    console.error("Get recommendations error:", err);
-    return res.status(500).json({ msg: "Server error", error: err.message });
-  }
-});
-
-// ======================================================
-// UPLOAD FEEDBACK FILE
+// FILE UPLOAD FOR FEEDBACK
 // ======================================================
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -349,6 +280,7 @@ router.post("/feedback/file", upload.single("file"), async (req, res) => {
     });
 
     return res.status(201).json(fb);
+
   } catch (err) {
     console.error("FILE FEEDBACK ERROR:", err);
     return res.status(500).json({ message: "Server error" });

@@ -15,8 +15,10 @@ const advisorRoute = require("./src/routes/advisorRoutes/advisorRoute");
 const ownerAdvisorRoutes = require("./src/routes/advisorRoutes/ownerAdvisorRoutes");
 const ownerRoutes = require("./src/routes/OwnerRoutes");
 
-// Manager-level routes (merged)
-const scenarioRoutes = require("./src/routes/scenarioRoutes");
+// Pricing Scenarios (THE CORRECT ONE)
+const pricingScenarioRoutes = require("./src/routes/pricingScenarioRoutes");
+
+// Manager-level routes
 const managerUserRoutes = require("./src/routes/ManagerRoutes/User");
 const ticketRoutes = require("./src/routes/ManagerRoutes/TicketRoutes");
 const assignmentRoutes = require("./src/routes/ManagerRoutes/AssignmentRoutes");
@@ -48,19 +50,18 @@ app.use("/api/advisor", advisorRoute);
 app.use("/api/link", ownerAdvisorRoutes);
 app.use("/api/owner", ownerRoutes);
 
-// Scenarios
-app.use("/api/pricing-scenarios", scenarioRoutes);
+// Pricing Scenarios (NEW SYSTEM ONLY)
+app.use("/api/pricing-scenarios", pricingScenarioRoutes);
 
-// Manager routes (merged cleanly)
+// Manager routes
 app.use("/api/manager/users", managerUserRoutes);
 app.use("/api/tickets", ticketRoutes);
 app.use("/api/assignments", assignmentRoutes);
 
-// Serve uploaded files if needed
-app.use(
-  "/uploads",
-  express.static(path.join(__dirname, "src", "uploads"))
-);
+// Serve uploaded files
+app.use("/uploads", express.static(path.join(__dirname, "src", "uploads")));
+app.use("/api/break-even-scenarios",require("./src/routes/breakEvenScenarioRoutes"));
+app.use("/api/business-data", require("./src/routes/businessDataOwnerRoute"));
 
 // ===============================
 //  START SERVER

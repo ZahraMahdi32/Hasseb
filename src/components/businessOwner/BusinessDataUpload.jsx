@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { Download, CheckCircle, X, Loader, AlertCircle } from "lucide-react";
+
+// USE THE FIXED EXCEL PARSER YOU APPROVED
 import { parseExcelFile } from "../../utils/excelParser";
 
 import "./BusinessDataUpload.css";
@@ -12,6 +14,9 @@ export default function BusinessDataUpload({ onUploadSuccess }) {
     const [uploadSuccess, setUploadSuccess] = useState(false);
     const [uploadProgress, setUploadProgress] = useState("");
 
+    /* ==========================================
+       FILE SELECTION + DRAG & DROP
+    ========================================== */
     const handleDragOver = (e) => {
         e.preventDefault();
         setIsDragging(true);
@@ -26,9 +31,7 @@ export default function BusinessDataUpload({ onUploadSuccess }) {
         e.preventDefault();
         setIsDragging(false);
         const files = e.dataTransfer.files;
-        if (files.length > 0) {
-            handleFileSelect(files[0]);
-        }
+        if (files.length > 0) handleFileSelect(files[0]);
     };
 
     const handleFileSelect = (file) => {
@@ -66,14 +69,29 @@ export default function BusinessDataUpload({ onUploadSuccess }) {
         setUploadProgress("");
     };
 
+    /* ==========================================
+       CUSTOM ICON
+    ========================================== */
     const UploadCloudIcon = () => (
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg
+            width="48"
+            height="48"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        >
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
             <polyline points="17 8 12 3 7 8"></polyline>
             <line x1="12" y1="3" x2="12" y2="15"></line>
         </svg>
     );
 
+    /* ==========================================
+       PROCESS EXCEL + SEND TO BACKEND
+    ========================================== */
     const handleProcessTemplate = async () => {
         if (!uploadedFile) {
             alert("Please select a file first");
@@ -83,14 +101,17 @@ export default function BusinessDataUpload({ onUploadSuccess }) {
         setIsUploading(true);
         setUploadError(null);
         setUploadSuccess(false);
+        setUploadProgress("");
 
         try {
-            // Step 1: Parse Excel
-            setUploadProgress("📊 Parsing Excel file...");
+            // Step 1: Parse Excel 📊
+            setUploadProgress("📊 Reading Excel…");
             const parsedData = await parseExcelFile(uploadedFile);
 
+            console.log("📘 Parsed Data:", parsedData);
+
             if (!parsedData.products?.length) {
-                throw new Error("No products found in the Excel file.");
+                throw new Error("No products found in Excel.");
             }
 
             const loggedUser = JSON.parse(localStorage.getItem("loggedUser"));
@@ -98,13 +119,17 @@ export default function BusinessDataUpload({ onUploadSuccess }) {
                 throw new Error("User not authenticated.");
             }
 
-            setUploadProgress("📦 Preparing data...");
+            // Step 2: Prepare FormData
+            setUploadProgress("📦 Preparing upload…");
+
             const formData = new FormData();
             formData.append("file", uploadedFile);
             formData.append("parsedData", JSON.stringify(parsedData));
-            formData.append("ownerId", loggedUser.userId); // FIXED ✔
+            formData.append("ownerId", loggedUser.userId);
 
-            setUploadProgress("⬆️ Uploading...");
+            // Step 3: Upload to backend
+            setUploadProgress("⬆️ Uploading to server…");
+
             const response = await fetch("http://localhost:5001/api/business-data/upload", {
                 method: "POST",
                 body: formData
@@ -116,24 +141,29 @@ export default function BusinessDataUpload({ onUploadSuccess }) {
 
             const result = await response.json();
 
-            if (result.success) {
-                setUploadSuccess(true);
-                setUploadProgress("✅ Upload completed!");
-                if (onUploadSuccess) onUploadSuccess(result.data);
-            } else {
+            if (!result.success) {
                 throw new Error(result.msg || "Upload failed");
             }
 
-        } catch (error) {
-            console.error("🔥 Upload error:", error);
-            setUploadError(error.message);
+            setUploadSuccess(true);
+            setUploadProgress("✅ Upload completed!");
+
+            if (onUploadSuccess) onUploadSuccess(result.data);
+
+        } catch (err) {
+            console.error("🔥 Upload error:", err);
+            setUploadError(err.message);
         } finally {
             setIsUploading(false);
         }
     };
 
+    /* ==========================================
+       UI
+    ========================================== */
     return (
         <>
+            {/* TEMPLATE DOWNLOAD CARD */}
             <div className="upload-card">
                 <div className="card-content-center">
                     <div className="header-with-icon">
@@ -144,14 +174,14 @@ export default function BusinessDataUpload({ onUploadSuccess }) {
                     </div>
 
                     <p className="download-section-desc">
-                        Organize your business data with Haseeb’s Excel template.
+                        Use Haseeb’s Excel template to organize your financial data.
                     </p>
 
                     <button
                         onClick={() => {
-                            const link = document.createElement('a');
-                            link.href = '/assets/Haseeb-Business-Template.xlsx';
-                            link.download = 'Haseeb-Business-Template.xlsx';
+                            const link = document.createElement("a");
+                            link.href = "/assets/Haseeb-Business-Template.xlsx";
+                            link.download = "Haseeb-Business-Template.xlsx";
                             link.click();
                         }}
                         className="download-btn"
@@ -161,17 +191,18 @@ export default function BusinessDataUpload({ onUploadSuccess }) {
                 </div>
             </div>
 
+            {/* UPLOAD CARD */}
             <div className="upload-card">
                 <div className="upload-card-header">
                     <h2>Upload Completed Template</h2>
-                    <p className="upload-subtitle">Ensure all required fields are filled before uploading</p>
+                    <p className="upload-subtitle">Ensure all sheets are filled correctly</p>
                 </div>
 
                 <div
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
-                    className={`file-drop-zone ${isDragging ? 'is-dragging' : ''}`}
+                    className={`file-drop-zone ${isDragging ? "is-dragging" : ""}`}
                 >
                     {!uploadedFile ? (
                         <div className="drop-zone-content">
@@ -200,10 +231,17 @@ export default function BusinessDataUpload({ onUploadSuccess }) {
                                 <CheckCircle className="success-icon" />
                                 <div className="file-details">
                                     <p className="file-name">{uploadedFile.name}</p>
-                                    <p className="file-size">{(uploadedFile.size / 1024).toFixed(2)} KB</p>
+                                    <p className="file-size">
+                                        {(uploadedFile.size / 1024).toFixed(2)} KB
+                                    </p>
                                 </div>
                             </div>
-                            <button className="remove-btn" onClick={removeFile} disabled={isUploading}>
+
+                            <button
+                                className="remove-btn"
+                                onClick={removeFile}
+                                disabled={isUploading}
+                            >
                                 <X className="remove-icon" />
                             </button>
                         </div>
@@ -218,6 +256,7 @@ export default function BusinessDataUpload({ onUploadSuccess }) {
                     />
                 </div>
 
+                {/* PROGRESS */}
                 {uploadProgress && (
                     <div className="progress-message">
                         {isUploading && <Loader className="progress-spinner" size={20} />}
@@ -225,6 +264,7 @@ export default function BusinessDataUpload({ onUploadSuccess }) {
                     </div>
                 )}
 
+                {/* ERROR */}
                 {uploadError && (
                     <div className="error-message">
                         <AlertCircle size={20} />
@@ -235,6 +275,7 @@ export default function BusinessDataUpload({ onUploadSuccess }) {
                     </div>
                 )}
 
+                {/* SUCCESS */}
                 {uploadSuccess && (
                     <div className="success-message">
                         <CheckCircle size={20} className="success-icon-msg" />
@@ -242,6 +283,7 @@ export default function BusinessDataUpload({ onUploadSuccess }) {
                     </div>
                 )}
 
+                {/* PROCESS BUTTON */}
                 {uploadedFile && !uploadSuccess && (
                     <div className="process-btn-wrapper">
                         <button
