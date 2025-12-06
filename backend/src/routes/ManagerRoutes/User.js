@@ -9,22 +9,19 @@ const { sendWelcomeEmail } = require("../../utils/email");
 function generateUsername(role, fullName) {
   const year = new Date().getFullYear();
 
-  // "Norah Fraih" -> "norah.fraih"
   const clean = fullName
     .trim()
     .toLowerCase()
-    .replace(/\s+/g, ".")        // spaces -> dots
-    .replace(/[^a-z.]/g, "");    // keep only letters and dots
+    .replace(/\s+/g, ".")        
+    .replace(/[^a-z.]/g, "");    
 
-  const random = Math.floor(10000 + Math.random() * 90000); // 5 digits
+  const random = Math.floor(10000 + Math.random() * 90000); 
 
   return `${role}.${clean}.${year}${random}`;
 }
 
 /* =======================================================
-   GET /api/users
    List all users for the manager dashboard
-   (READ-ONLY: does NOT auto-change status)
 ======================================================= */
 router.get("/", async (req, res) => {
   try {
@@ -50,7 +47,6 @@ router.get("/", async (req, res) => {
 });
 
 /* =======================================================
-   POST /api/users
    Create a new user from the manager panel
 ======================================================= */
 router.post("/", async (req, res) => {
@@ -220,6 +216,79 @@ router.put("/:ownerId/assign-advisor", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+// ... existing code above ...
+
+// list owners + advisors + each owner's current advisor
+router.get("/owners-advisors", async (req, res) => {
+  try {
+    const owners = await User.find({ role: "owner" })
+      .select("_id fullName email advisorId")
+      .lean();
+
+    const advisors = await User.find({ role: "advisor" })
+      .select("_id fullName email")
+      .lean();
+
+    const advisorMap = {};
+    advisors.forEach((a) => {
+      advisorMap[a._id.toString()] = a.fullName;
+    });
+
+    const ownersWithAdvisor = owners.map((o) => ({
+      id: o._id.toString(),
+      fullName: o.fullName,
+      email: o.email,
+      advisorId: o.advisorId ? o.advisorId.toString() : null,
+      advisorName: o.advisorId
+        ? advisorMap[o.advisorId.toString()] || "Unknown"
+        : null,
+    }));
+
+    res.json({
+      owners: ownersWithAdvisor,
+      advisors: advisors.map((a) => ({
+        id: a._id.toString(),
+        fullName: a.fullName,
+        email: a.email,
+      })),
+    });
+  } catch (err) {
+    console.error("GET /api/users/owners-advisors error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+/* =======================================================
+   GET /api/users/:id
+   Fetch a single user (used by AccountPanel)
+======================================================= */
+router.get("/:id", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.json({
+      id: user._id.toString(),
+      fullName: user.fullName,
+      email: user.email,
+      role: user.role,
+      status: user.status || "inactive",
+      createdAt: user.createdAt,
+    });
+  } catch (err) {
+    console.error("GET /api/users/:id error:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+});
+
+// assign (or unassign) advisor for an owner
+router.put("/:ownerId/assign-advisor", async (req, res) => {
+
+});
+
 
 /* =======================================================
    PUT /api/users/:id
