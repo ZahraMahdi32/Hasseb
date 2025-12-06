@@ -122,6 +122,7 @@
     position: relative;
     border-left: 3px solid transparent;
     text-decoration: none;
+    border: none;
 }
 
 .sidebar-neo__icon {
@@ -160,22 +161,58 @@
     opacity: 1 !important;
 }
 
-/* Active - Only left border */
-.sidebar-neo__item.is-active {
+/* Active - DARK NAVY with teal border */
+.sidebar-neo__item.is-active,
+.sidebar-neo .sidebar-neo__item.is-active,
+button.sidebar-neo__item.is-active,
+.sidebar-neo__nav .sidebar-neo__item.is-active,
+.owner-sidebar .sidebar-neo__item.is-active {
     background: transparent !important;
-    color: #1AC6C6 !important;
+    background-image: none !important;
+    background-color: transparent !important;
+    color: #082830 !important;
     border-left: 3px solid #1AC6C6 !important;
-    font-weight: 700;
+    font-weight: 700 !important;
     box-shadow: none !important;
     border-radius: 0 14px 14px 0 !important;
 }
 
+/* Active hover - keep dark navy */
+.sidebar-neo__item.is-active:hover,
+.sidebar-neo .sidebar-neo__item.is-active:hover,
+button.sidebar-neo__item.is-active:hover,
+.sidebar-neo__nav .sidebar-neo__item.is-active:hover,
+.owner-sidebar .sidebar-neo__item.is-active:hover {
+    background: #f9fafb !important;
+    background-image: none !important;
+    background-color: #f9fafb !important;
+    color: #082830 !important;
+    border-left: 3px solid #1AC6C6 !important;
+}
+
+/* Active icon - dark navy */
 .sidebar-neo__item.is-active .sidebar-neo__icon,
-.sidebar-neo__item.is-active .sidebar-neo__icon svg {
-    color: #1AC6C6 !important;
+.sidebar-neo__item.is-active .sidebar-neo__icon svg,
+.sidebar-neo__item.is-active:hover .sidebar-neo__icon,
+.sidebar-neo__item.is-active:hover .sidebar-neo__icon svg {
+    color: #082830 !important;
+    stroke: #082830 !important;
     display: flex !important;
     visibility: visible !important;
     opacity: 1 !important;
+}
+
+/* Remove focus outline */
+.sidebar-neo__item:focus,
+.sidebar-neo__item:active,
+.sidebar-neo__item.is-active:focus,
+.sidebar-neo__item.is-active:active,
+button.sidebar-neo__item:focus,
+button.sidebar-neo__item:active {
+    outline: none !important;
+    background: transparent !important;
+    background-image: none !important;
+    background-color: transparent !important;
 }
 
 /* Green dot */
@@ -223,17 +260,59 @@
     color: #1AC6C6 !important;
 }
 
-/* Help Text */
+/* Help Text - clickable */
 .sidebar-neo__help-text {
     font-size: 12px;
     color: #9ca3af !important;
     padding: 16px 20px 10px;
     font-weight: 500;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    text-align: left;
+    width: 100%;
+    transition: color 0.2s ease;
+}
+
+.sidebar-neo__help-text:hover {
+    color: #14748A !important;
+}
+
+/* Logout - RED */
+.sidebar-neo__logout,
+.sidebar-neo__logout:link,
+.sidebar-neo__logout:visited,
+.sidebar-neo__logout:hover,
+.sidebar-neo__logout:active,
+a.sidebar-neo__logout,
+button.sidebar-neo__logout {
+    color: #FF5757 !important;
+    font-weight: 700 !important;
+    font-size: 15px !important;
+    padding: 12px 20px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    margin: 0 16px 16px !important;
+    border-radius: 12px !important;
+    background: transparent !important;
+    text-decoration: none !important;
+    border: none !important;
+    border-left: 3px solid transparent !important;
 }
 
 .sidebar-neo__logout:hover {
     background: rgba(255,87,87,.1) !important;
     transform: translateX(3px) !important;
+}
+
+.sidebar-neo__logout svg,
+.sidebar-neo__logout .sidebar-neo__icon,
+.sidebar-neo__logout .sidebar-neo__icon svg {
+    color: #FF5757 !important;
+    stroke: #FF5757 !important;
 }
 
 /* Scrollbar */
@@ -246,6 +325,84 @@
 }
 .sidebar-neo::-webkit-scrollbar-thumb:hover {
     background: rgba(20,116,138,.4);
+}
+
+
+/* Bottom section - always visible */
+.sidebar-neo__bottom {
+    margin-top: auto;
+    flex-shrink: 0;
+}
+
+/* Fix sidebar to be fixed and scrollable nav only */
+.sidebar-neo {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 90;
+    overflow: hidden;
+}
+
+.sidebar-neo__nav {
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.sidebar-neo__nav::-webkit-scrollbar {
+    width: 5px;
+}
+.sidebar-neo__nav::-webkit-scrollbar-thumb {
+    background: rgba(20,116,138,.2);
+    border-radius: 10px;
+}
+.sidebar-neo__nav::-webkit-scrollbar-thumb:hover {
+    background: rgba(20,116,138,.4);
+}
+
+.pm-backdrop {
+    position: fixed;
+    top: 56px;        /* height of navbar */
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.45);
+    z-index: 1000;
+}
+
+/* Main content area */
+.owner-main {
+    padding-top: calc(72px + -1rem); /* Increased padding */
+    min-height: 100vh;
+}
+
+/* Mobile - no left padding when sidebar is hidden */
+@media (max-width: 1023px) {
+    .owner-main {
+        padding-left: 2rem;
+        padding-top: calc(72px + 3rem); /* Slightly less on mobile */
+    }
+}
+
+/* Mobile responsive */
+@media (max-width: 1023px) {
+    .sidebar-neo.pm-slide {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        transform: translateX(-100%);
+        z-index: 1045;
+    }
+
+    .sidebar-neo.pm-slide.is-open {
+        transform: translateX(0);
+    }
+
+    .owner-sidebar.sidebar-neo.pm-slide {
+        top: 72px;
+        height: calc(100vh - 72px);
+    }
 }
 
 /* ================================
@@ -277,6 +434,11 @@ body[data-theme="dark"] .sidebar-neo__item:hover .sidebar-neo__icon svg {
 }
 
 body[data-theme="dark"] .sidebar-neo__item.is-active {
+    color: #1AC6C6 !important;
+}
+
+body[data-theme="dark"] .sidebar-neo__item.is-active .sidebar-neo__icon,
+body[data-theme="dark"] .sidebar-neo__item.is-active .sidebar-neo__icon svg {
     color: #1AC6C6 !important;
 }
 
