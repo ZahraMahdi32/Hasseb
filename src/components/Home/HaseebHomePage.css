@@ -2,7 +2,7 @@
    HASEEB HomePage Styles
    ================================ */
 
-@import url('../../styles/global.css');
+@import url('../../SharedStyles/global.css');
 
 * {
     box-sizing: border-box;

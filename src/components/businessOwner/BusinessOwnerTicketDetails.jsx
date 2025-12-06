@@ -1,46 +1,10 @@
-// import React from "react";
-// import { FiArrowLeft } from "react-icons/fi";
-//
-// export default function TicketDetailsPanel({ ticket, setTab }) {
-//   if (!ticket) {
-//     return (
-//       <div className="alert alert-warning fw-semibold m-4">
-//         لا توجد تذكرة محددة — الرجاء اختيار تذكرة من صفحة الدعم.
-//       </div>
-//     );
-//   }
-//
-//   return (
-//     <div className="container-xxl">
-//
-//       <button
-//         className="btn btn-outline-secondary mb-3"
-//         onClick={() => setTab("support")}
-//       >
-//         <FiArrowLeft /> Back
-//       </button>
-//
-//       <div className="card p-4 shadow-sm">
-//         <h3 className="fw-bold mb-3">{ticket.title}</h3>
-//
-//         <p><strong>Status:</strong> {ticket.status}</p>
-//         <p><strong>Description:</strong> {ticket.description || "No description provided."}</p>
-//
-//         <p className="text-muted small mt-3">
-//           Created: {new Date(ticket.createdAt).toLocaleString()}
-//         </p>
-//       </div>
-//
-//     </div>
-//   );
-// }
 import React, { useState } from "react";
 import { FiArrowLeft, FiSend, FiAlertCircle } from "react-icons/fi";
-import "../../SharedStyles/SharedTicketDetails.css";
+import "../shared/SharedTicketDetails.css"; // Import shared styles
 
-export default function TicketDetailsPanel({ ticket, setTab }) {
+export default function BusinessOwnerTicketDetails({ ticket, setTab }) {
     const user = JSON.parse(localStorage.getItem("loggedUser"));
-    const role = user?.role || "advisor";
+    const role = user?.role || "business-owner";
 
     const [reply, setReply] = useState("");
     const [sending, setSending] = useState(false);
@@ -134,17 +98,17 @@ export default function TicketDetailsPanel({ ticket, setTab }) {
                 <div className="messages-container">
                     {ticket.messages && ticket.messages.length > 0 ? (
                         ticket.messages.map((m, index) => {
-                            const isAdvisor = m.senderRole === "advisor";
+                            const isOwner = m.senderRole === "business-owner";
                             const isManager = m.senderRole === "manager";
 
                             return (
                                 <div
                                     key={index}
-                                    className={`message ${isAdvisor ? "message-advisor" : "message-manager"}`}
+                                    className={`message ${isOwner ? "message-owner" : "message-manager"}`}
                                 >
                                     <div className="message-bubble">
                                         <div className="message-sender">
-                                            {isManager ? "Manager" : isAdvisor ? "You" : m.senderRole}
+                                            {isManager ? "Manager" : isOwner ? "You" : m.senderRole}
                                         </div>
                                         <div className="message-text">{m.text}</div>
                                         <div className="message-time">
