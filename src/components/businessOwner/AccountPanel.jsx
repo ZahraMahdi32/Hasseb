@@ -17,17 +17,6 @@ export default function AccountPanel({ settings, setSettings }) {
         );
     }
 
-    const theme = settings?.themeOption || "light";
-
-    // ============================
-    // APPLY THEME HANDLER
-    // ============================
-    const handleThemeChange = (value) => {
-        setSettings({ themeOption: value });
-        localStorage.setItem("themeOption", value);
-        document.body.setAttribute("data-theme", value);
-    };
-
     // ============================
     // PROFILE IMAGE HANDLER
     // ============================
@@ -141,30 +130,6 @@ export default function AccountPanel({ settings, setSettings }) {
                                 {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Theme Settings */}
-            <div className="account-card">
-                <h2 className="card-title">Appearance</h2>
-                <div className="theme-section">
-                    <div className="theme-description">
-                        <p className="theme-label">Theme Preference</p>
-                        <p className="theme-helper">
-                            Choose your preferred theme for the dashboard
-                        </p>
-                    </div>
-                    <div className="theme-selector">
-                        <select
-                            className="theme-select"
-                            value={theme}
-                            onChange={(e) => handleThemeChange(e.target.value)}
-                        >
-                            <option value="light">Light Mode</option>
-                            <option value="dark">Dark Mode</option>
-                            <option value="system">System Default</option>
-                        </select>
                     </div>
                 </div>
             </div>
