@@ -1,160 +1,181 @@
+// src/components/businessOwner/OwnerDashboardPanel.jsx
 import React, { useState, useEffect } from "react";
 import { generateDashboardInsights } from "./InsightEngine";
-import "./OwnerDashboardPanel.css"; 
+import "./OwnerDashboardPanel.css";
+
 const TICKETS_API_URL = "http://localhost:5001/api/tickets";
 
+export default function Dashboard() {
 
-export default function Dashboard({ baseData }) {
-    const [shareLoading, setShareLoading] = useState(false);
-    const [shareError, setShareError] = useState("");
-    const [shareSuccess, setShareSuccess] = useState("");
-    const [shareFile, setShareFile] = useState(null); 
+  // -----------------------------
+  // STATE
+  // -----------------------------
+  const [businessData, setBusinessData] = useState(null);
+  const [loadingData, setLoadingData] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
+  const [shareLoading, setShareLoading] = useState(false);
+  const [shareError, setShareError] = useState("");
+  const [shareSuccess, setShareSuccess] = useState("");
 
-    if (!baseData) return <div>Loading…</div>;
-
-    const insights = generateDashboardInsights(baseData);
-
-    if (!insights) return <div>No data available.</div>;
-
-    const { bepInsights, pricingInsights, cashInsights, healthScore, recommendations } = insights;
-
-    // -------------------------
-    // EXPORT CSV
-    // -------------------------
-    function handleExportCSV() {
-        const rows = [];
-
-        rows.push(["Metric", "Value"]);
-
-        rows.push(["Health Score", healthScore]);
-        rows.push(["Real Burn Rate", cashInsights.realBurnRate]);
-
-        bepInsights.forEach((b) => {
-            rows.push([`BEP - ${b.product}`, b.issue ? "Not profitable" : `${b.breakEvenUnits} units`]);
-        });
-
-        pricingInsights.forEach((p) => {
-            rows.push([`Margin - ${p.product}`, `${p.margin.toFixed(1)}%`]);
-        });
-
-        recommendations.forEach((r, i) => {
-            rows.push([`Recommendation ${i + 1}`, r]);
-        });
-
-        let csvContent =
-            "data:text/csv;charset=utf-8," +
-            rows.map((e) => e.join(",")).join("\n");
-
-        const link = document.createElement("a");
-        link.href = encodeURI(csvContent);
-        link.download = "business_model_export.csv";
-        link.click();
-    }
-
-    // -------------------------
-    // SHARE (mock)
-    // -------------------------
-async function handleShareWithAdvisor() {
-  // DEBUG: Show that the button works
-  console.log("DEBUG: Share button clicked");
-  alert("Share button clicked!"); // <--- TEMP
-
-  try {
-    setShareLoading(true);
-    setShareError("");
-    setShareSuccess("");
-
-    // Add more debug logs
-    console.log("DEBUG: Starting share process...");
-
-    // 1) Get logged-in owner from localStorage
+  // -----------------------------
+  // ALWAYS FETCH BUSINESS DATA USING ownerId
+  // -----------------------------
+  useEffect(() => {
     const logged = JSON.parse(localStorage.getItem("loggedUser") || "null");
-    console.log("DEBUG: logged user =", logged);
+    const ownerId = logged?.ownerId;
 
-    if (!logged || !logged.userId) {
-      setShareError("Cannot find logged in owner information.");
+    if (!ownerId) {
+      console.error("❌ No ownerId in loggedUser");
+      setLoadError("Cannot find owner account. Please log in again.");
+      setLoadingData(false);
       return;
     }
 
-    const ownerId = logged.userId;
+    async function fetchBusinessData() {
+      try {
+        const res = await fetch(
+          `http://localhost:5001/api/business-data/owner/${ownerId}`
+        );
 
-    // 2) Check selected file
-    console.log("DEBUG: selected file =", shareFile);
+        const data = await res.json();
 
-    if (!shareFile) {
-      setShareError("Please choose a file to share with your advisor.");
-      return;
+        if (!data.success || !data.data) {
+          throw new Error(data.message || "Failed to load business data.");
+        }
+
+        setBusinessData(data.data);
+
+      } catch (err) {
+        console.error("❌ Error fetching business data:", err);
+        setLoadError(err.message || "Failed to load business data.");
+      } finally {
+        setLoadingData(false);
+      }
     }
 
-    // 3) Request advisor assignment
-    console.log("DEBUG: Fetching advisor for owner", ownerId);
-    const assignmentRes = await fetch(
-      `http://localhost:5001/api/assignments/owner/${ownerId}`
-    );
+    fetchBusinessData();
+  }, []);
 
-    console.log("DEBUG: assignment response status =", assignmentRes.status);
+  // -----------------------------
+  // LOADING / ERROR HANDLING
+  // -----------------------------
+  if (loadingData) return <div>Loading…</div>;
 
-    if (!assignmentRes.ok) {
-      const err = await assignmentRes.json().catch(() => ({}));
-      throw new Error(err.message || "No advisor assigned to this owner.");
-    }
+  if (!businessData) {
+    return <div>{loadError || "No data available. Please upload your sheets."}</div>;
+  }
 
-    const assignment = await assignmentRes.json();
-    console.log("DEBUG: assignment result =", assignment);
+  // -----------------------------
+  // INSIGHTS ENGINE
+  // -----------------------------
+  const insights = generateDashboardInsights(businessData);
 
-    const advisorId = assignment.advisorId;
+  if (!insights) return <div>No data available.</div>;
 
-    // 4) Creating FormData
-    console.log("DEBUG: Building FormData with:", {
-      ownerId,
-      advisorId,
-      shareFile,
+  const {
+    bepInsights,
+    pricingInsights,
+    cashInsights,
+    healthScore,
+    recommendations,
+  } = insights;
+
+  // ================================================================
+  // CSV EXPORT
+  // ================================================================
+  function handleExportCSV() {
+    const rows = [];
+
+    rows.push(["Metric", "Value"]);
+    rows.push(["Health Score", healthScore]);
+    rows.push(["Real Burn Rate", cashInsights.realBurnRate]);
+
+    bepInsights.forEach((b) => {
+      rows.push([
+        `BEP - ${b.product}`,
+        b.issue ? "Not profitable" : `${b.breakEvenUnits} units`,
+      ]);
     });
 
-    const fd = new FormData();
-    fd.append("file", shareFile);
-    fd.append("ownerId", ownerId);
-    fd.append("advisorId", advisorId);
+    pricingInsights.forEach((p) => {
+      rows.push([`Margin - ${p.product}`, `${p.margin.toFixed(1)}%`]);
+    });
 
-    // 5) Upload to backend
-    console.log("DEBUG: Uploading file...");
-    const uploadRes = await fetch(
-      "http://localhost:5001/api/advisor/feedback/file",
-      {
-        method: "POST",
-        body: fd,
-      }
-    );
+    recommendations.forEach((r, i) => {
+      rows.push([`Recommendation ${i + 1}`, r]);
+    });
 
-    console.log("DEBUG: upload status =", uploadRes.status);
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
+      rows.map((e) => e.join(",")).join("\n");
 
-    if (!uploadRes.ok) {
-      const err = await uploadRes.json().catch(() => ({}));
-      throw new Error(err.message || "Failed to share file with advisor.");
-    }
-
-    setShareSuccess("File shared with advisor successfully!");
-    setShareFile(null);
-
-    // DEBUG SUCCESS MESSAGE
-    alert("Upload finished successfully!"); // <--- TEMP
-  } catch (err) {
-    console.error("handleShareWithAdvisor error:", err);
-    setShareError(err.message || "Failed to share with advisor.");
-    alert("Error happened: " + err.message); // <--- TEMP
-  } finally {
-    setShareLoading(false);
+    const link = document.createElement("a");
+    link.href = encodeURI(csvContent);
+    link.download = "business_model_export.csv";
+    link.click();
   }
-}
 
+  // ================================================================
+  // SHARE WITH ADVISOR (TICKET)
+  // ================================================================
+  async function handleShareWithAdvisor() {
+    try {
+      setShareLoading(true);
+      setShareError("");
+      setShareSuccess("");
 
-  // -------------------------
+      const logged = JSON.parse(localStorage.getItem("loggedUser") || "null");
+
+      if (!logged || !logged.userId) {
+        setShareError("Cannot find logged in owner information.");
+        return;
+      }
+
+      const subject = "Simulation shared for advisor feedback";
+      const topRecs = recommendations.slice(0, 3).join(" | ");
+
+      const message = `
+Owner has shared a new simulation.
+
+Health score: ${healthScore}/100
+Real burn rate: ${cashInsights.realBurnRate} SAR/month
+
+Top recommendations:
+${topRecs || "No recommendations generated."}
+      `.trim();
+
+      const res = await fetch(TICKETS_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fromUserId: logged.userId,
+          fromRole: "owner",
+          subject,
+          message,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || "Failed to share with advisor.");
+      }
+
+      setShareSuccess("Shared with advisor successfully!");
+    } catch (err) {
+      console.error("handleShareWithAdvisor error:", err);
+      setShareError(err.message || "Failed to share with advisor.");
+    } finally {
+      setShareLoading(false);
+    }
+  }
+
+  // -----------------------------
   // RENDER
-  // -------------------------
+  // -----------------------------
   return (
     <div className="dashboard-container">
-      {/* HEADER */}
+      
       <div className="dashboard-header">
         <h1 className="dashboard-title">Business Dashboard</h1>
         <p className="dashboard-subtitle">
@@ -162,16 +183,11 @@ async function handleShareWithAdvisor() {
         </p>
       </div>
 
-      {/* FEEDBACK MESSAGES */}
       {shareError && (
-        <div className="alert alert-danger py-2 small mb-2">
-          {shareError}
-        </div>
+        <div className="alert alert-danger py-2 small mb-2">{shareError}</div>
       )}
       {shareSuccess && (
-        <div className="alert alert-success py-2 small mb-2">
-          {shareSuccess}
-        </div>
+        <div className="alert alert-success py-2 small mb-2">{shareSuccess}</div>
       )}
 
       {/* HEALTH SCORE */}
@@ -179,15 +195,13 @@ async function handleShareWithAdvisor() {
         <h3>Health Score</h3>
         <p className="health-score-number">{healthScore}/100</p>
         <p className="health-score-desc">
-          This score evaluates pricing strength, break-even feasibility, and
-          cash flow resilience.
+          This score evaluates pricing strength, break-even feasibility, and cash flow resilience.
         </p>
       </div>
 
-      {/* CASH INSIGHTS */}
+      {/* CASH FLOW */}
       <div className="section-card">
         <h3>Cash Flow Insights</h3>
-
         <div className="insight-row">
           <div className="insight-box">
             <h4>Real Burn Rate</h4>
@@ -195,12 +209,10 @@ async function handleShareWithAdvisor() {
               {cashInsights.realBurnRate.toLocaleString()} SAR / month
             </p>
           </div>
-
           <div className="insight-box">
             <h4>Danger Months</h4>
             <p className="insight-number">{cashInsights.dangerMonths}</p>
           </div>
-
           <div className="insight-box">
             <h4>First Danger Month</h4>
             <p className="insight-number">
@@ -210,28 +222,24 @@ async function handleShareWithAdvisor() {
         </div>
       </div>
 
-      {/* BREAK-EVEN INSIGHTS */}
+      {/* BREAK EVEN */}
       <div className="section-card">
         <h3>Break-Even Insights</h3>
-
+        {bepInsights.length === 0 && <p>No break-even insights yet.</p>}
         {bepInsights.map((b, i) => (
-          <div
-            key={i}
-            className={`bep-item ${b.issue ? "bep-warning" : ""}`}
-          >
+          <div key={i} className={`bep-item ${b.issue ? "bep-warning" : ""}`}>
             <strong>{b.product}:</strong> {b.message}
           </div>
         ))}
       </div>
 
-      {/* PRICING INSIGHTS */}
+      {/* PRICING */}
       <div className="section-card">
         <h3>Pricing Insights</h3>
-
+        {pricingInsights.length === 0 && <p>No pricing insights yet.</p>}
         {pricingInsights.map((p, i) => (
           <div key={i} className="pricing-item">
-            <strong>{p.product}:</strong>{" "}
-            {p.margin.toFixed(1)}% margin — {p.opportunity}
+            <strong>{p.product}:</strong> {p.margin.toFixed(1)}% margin — {p.opportunity}
           </div>
         ))}
       </div>
@@ -239,43 +247,30 @@ async function handleShareWithAdvisor() {
       {/* RECOMMENDATIONS */}
       <div className="section-card">
         <h3>Recommendations</h3>
-        <ul className="recs-list">
-          {recommendations.map((r, i) => (
-            <li key={i}>{r}</li>
-          ))}
-        </ul>
+        {recommendations.length === 0 ? (
+          <p>No recommendations generated yet.</p>
+        ) : (
+          <ul className="recs-list">
+            {recommendations.map((r, i) => (
+              <li key={i}>{r}</li>
+            ))}
+          </ul>
+        )}
       </div>
 
-      {/* ACTION BUTTONS */}
-  <div className="dashboard-actions">
-  <input
-    type="file"
-    className="form-control mb-2"
-    onChange={(e) => {
-      const file = e.target.files?.[0] || null;
-      console.log("selected file:", file);       // debug
-      setShareFile(file);
-    }}
-  />
+      <div className="dashboard-actions">
+        <button className="export-btn" onClick={handleExportCSV}>
+          Export CSV
+        </button>
 
-  <button
-    type="button"                               // ⬅ ADD THIS
-    className="export-btn"
-    onClick={handleExportCSV}
-  >
-    Export CSV
-  </button>
-
-  <button
-    type="button"                               // ⬅ AND THIS
-    className="share-btn btn btn-warning"
-    onClick={handleShareWithAdvisor}
-    disabled={shareLoading}
-  >
-    {shareLoading ? "Sharing…" : "Share with Advisor"}
-  </button>
-</div>
-
+        <button
+          className="share-btn btn btn-warning"
+          onClick={handleShareWithAdvisor}
+          disabled={shareLoading}
+        >
+          {shareLoading ? "Sharing…" : "Share with Advisor"}
+        </button>
+      </div>
     </div>
   );
 }

@@ -5,10 +5,21 @@ const OwnerSchema = new mongoose.Schema({
   email: String,
   businessName: String,
 
+  username: {
+    type: String,
+    unique: true,
+  },
+
   advisor: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Advisor",
-    default: null
+    default: null,
+  },
+
+  businessData: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "BusinessData",
+    default: null,
   },
 
   /* ============================
@@ -34,8 +45,8 @@ const OwnerSchema = new mongoose.Schema({
     {
       content: String,
       createdAt: { type: Date, default: Date.now },
-      advisorId: { type: mongoose.Schema.Types.ObjectId, ref: "Advisor" }
-    }
+      advisorId: { type: mongoose.Schema.Types.ObjectId, ref: "Advisor" },
+    },
   ],
 
   /* ============================
@@ -46,9 +57,9 @@ const OwnerSchema = new mongoose.Schema({
       title: String,
       description: String,
       status: { type: String, default: "open" },
-      createdAt: { type: Date, default: Date.now }
-    }
-  ]
+      createdAt: { type: Date, default: Date.now },
+    },
+  ],
 });
 
 module.exports = mongoose.model("Owner", OwnerSchema);

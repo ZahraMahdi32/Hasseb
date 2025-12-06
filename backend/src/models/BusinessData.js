@@ -1,79 +1,112 @@
-// backend/src/models/BusinessData.js
+// models/BusinessData.js
 const mongoose = require("mongoose");
 
-const BusinessDataSchema = new mongoose.Schema({
-    username: {
-        type: String,
-        required: true,
-        unique: true,  // One business data per owner
-        ref: "User"
+/* ===========================
+   CASH FLOW SCHEMA
+=========================== */
+const CashFlowRowSchema = new mongoose.Schema(
+  {
+    date: String,
+    description: String,
+    cashIn: Number,
+    cashOut: Number,
+    netCashFlow: Number,
+    runningBalance: Number,
+  },
+  { _id: false }
+);
+
+/* ===========================
+   PRODUCT (Contribution Margin)
+   -> Option B field names
+=========================== */
+const ProductSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    value: { type: String, default: "" }, // Premium / Standard
+
+    pricePerUnit: { type: Number, default: 0 },
+    variableCostPerUnit: { type: Number, default: 0 },
+
+    fixedCosts: { type: Number, default: 0 },
+    cm: { type: Number, default: 0 },
+
+    breakEvenUnits: { type: Number, default: 0 },
+    breakEvenSar: { type: Number, default: 0 },
+  },
+  { _id: true }
+);
+
+/* ===========================
+   PRICING SENSITIVITY SCHEMA
+=========================== */
+const PricingScenarioSchema = new mongoose.Schema(
+  {
+    scenario: String,
+    price: Number,
+    unitsSold: Number,
+    revenue: Number,
+    variableCost: Number,
+    cm: Number,
+    profit: Number,
+  },
+  { _id: true }
+);
+
+/* ===========================
+   BREAK-EVEN USER SCENARIOS
+   (saved from BreakEvenCalculator)
+=========================== */
+const BreakEvenScenarioSchema = new mongoose.Schema(
+  {
+    productName: String,
+    scenarioName: String,
+    description: String,
+    notes: String,
+    tag: { type: String, default: "Break-Even" },
+
+    fixedCost: Number,
+    variableCostPerUnit: Number,
+    pricePerUnit: Number,
+
+    cmPerUnit: Number,
+    cmRatio: Number, // percentage
+
+    breakEvenUnits: Number,
+    breakEvenSales: Number,
+
+    createdAt: { type: Date, default: Date.now },
+  },
+  { _id: true }
+);
+
+/* ===========================
+   MAIN BUSINESS DATA MODEL
+=========================== */
+const BusinessDataSchema = new mongoose.Schema(
+  {
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Owner",
+      required: true,
     },
-    businessName: {
-        type: String,
-        required: true
-    },
 
-    // Sheet[1]: Contribution Margin
-    // Products
-    products: [
-        {
-            id: String,
-            name: String,                // Item
-            category: String,            // Value (Premium/Standard)
-            pricePerUnit: Number,        // Price
-            variableCostPerUnit: Number, // Variable Cost
-            contributionMargin: Number,  // CM
-            breakEvenUnits: Number,      // Break-Even Units
-            breakEvenRevenue: Number     // Break-Even SAR
-        }
-    ],
+    businessName: { type: String, default: "" },
 
-    // Fixed costs
-    fixedCost: {
-        type: Number,
-        required: true
-    },
+    products: [ProductSchema],
 
-    // Sheet[2]: Cash Flow
-    cashFlow: [
-        {
-            date: String,              // Date
-            description: String,       // Description
-            cashIn: Number,            // Cash In
-            cashOut: Number,           // Cash Out
-            netCashFlow: Number,       // Net Cash Flow
-            runningBalance: Number     // Running Balance
-        }
-    ],
+    cashFlow: [CashFlowRowSchema],
 
-    // Sheet[3]: Pricing Sensitivity
-    // Pricing scenarios
-    pricingScenarios: [
-        {
-            scenario: String,          // Scenario
-            price: Number,             // Price
-            unitsSold: Number,         // Units Sold
-            revenue: Number,           // Revenue
-            variableCost: Number,      // Variable Cost
-            contributionMargin: Number, // CM
-            profit: Number             // Profit
-        }
-    ],
+    pricingScenarios: [PricingScenarioSchema],
 
-    // File metadata
-    fileName: {
-        type: String,
-        required: true
-    },
+    // main fixed cost used by BEP / Pricing tools
+    fixedCost: { type: Number, default: 0 },
 
-    fileSize: Number,
-    uploadedAt: {
-        type: Date,
-        default: Date.now
-    },
+    // user-defined break-even scenarios
+    scenarios: [BreakEvenScenarioSchema],
+  },
 
-    // Store the raw file path
-    filePath: String
-});
+  { timestamps: true }
+);
 
 module.exports = mongoose.model("BusinessData", BusinessDataSchema);

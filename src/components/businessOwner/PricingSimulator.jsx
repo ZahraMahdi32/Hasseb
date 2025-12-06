@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from "react";
 import "./PricingSimulator.css";
 
-// --- Core calculator logic ---
 function calcPricing({ fixedCost, variableCostPerUnit, pricePerUnit, newPrice }) {
     const f = Number(fixedCost);
     const v = Number(variableCostPerUnit);
@@ -14,12 +13,9 @@ function calcPricing({ fixedCost, variableCostPerUnit, pricePerUnit, newPrice })
     }
 
     if (newP <= v) {
-        return {
-            error: "Price must be greater than variable cost per unit.",
-        };
+        return { error: "Price must be greater than variable cost per unit." };
     }
 
-    // Calculate break-even units for fixed cost allocation
     const currentContributionMargin = currentP - v;
     if (currentContributionMargin <= 0) {
         return { error: "Current price must be greater than variable cost." };
@@ -28,27 +24,16 @@ function calcPricing({ fixedCost, variableCostPerUnit, pricePerUnit, newPrice })
     const breakEvenUnits = Math.ceil(f / currentContributionMargin);
     const fixedCostPerUnit = f / breakEvenUnits;
 
-    // Current metrics
     const currentProfitPerUnit = currentContributionMargin - fixedCostPerUnit;
     const currentRevenue = currentP * breakEvenUnits;
     const currentTotalProfit = currentProfitPerUnit * breakEvenUnits;
     const currentProfitMargin = ((currentP - v - fixedCostPerUnit) / currentP) * 100;
 
-    // New price metrics
     const newContributionMargin = newP - v;
     const newProfitPerUnit = newContributionMargin - fixedCostPerUnit;
     const newRevenue = newP * breakEvenUnits;
     const newTotalProfit = newProfitPerUnit * breakEvenUnits;
     const newProfitMargin = ((newP - v - fixedCostPerUnit) / newP) * 100;
-
-    // Differences
-    const revenueDifference = newRevenue - currentRevenue;
-    const profitDifference = newTotalProfit - currentTotalProfit;
-    const profitPerUnitDifference = newProfitPerUnit - currentProfitPerUnit;
-
-    // Optimal price (50% markup on total cost)
-    const totalCostPerUnit = v + fixedCostPerUnit;
-    const optimalPrice = totalCostPerUnit * 1.5;
 
     return {
         breakEvenUnits,
@@ -68,15 +53,14 @@ function calcPricing({ fixedCost, variableCostPerUnit, pricePerUnit, newPrice })
             profitMargin: newProfitMargin,
         },
         differences: {
-            revenue: revenueDifference,
-            profit: profitDifference,
-            profitPerUnit: profitPerUnitDifference,
+            revenue: newRevenue - currentRevenue,
+            profit: newTotalProfit - currentTotalProfit,
+            profitPerUnit: newProfitPerUnit - currentProfitPerUnit,
         },
-        optimalPrice,
+        optimalPrice: (v + fixedCostPerUnit) * 1.5,
     };
 }
 
-// --- Build summary for dashboard ---
 function buildPricingSummary(result, productName) {
     if (!result || result.error) return null;
 
@@ -99,24 +83,27 @@ function buildPricingSummary(result, productName) {
 export default function PricingSimulator({ baseData, onUpdate }) {
     const [mode, setMode] = useState("readOnly");
     const [selectedProductId, setSelectedProductId] = useState(
-        baseData?.products?.[0]?.id ?? null
+        baseData?.products?.[0]?._id ?? baseData?.products?.[0]?.id ?? null
     );
+
     const [sliderValue, setSliderValue] = useState(0);
     const [result, setResult] = useState(null);
 
     useEffect(() => {
         if (!baseData || !baseData.products) return;
-        setSelectedProductId(baseData.products[0]?.id ?? null);
+        setSelectedProductId(baseData.products[0]?._id || baseData.products[0]?.id);
         setResult(null);
         if (onUpdate) onUpdate(null);
     }, [baseData, onUpdate]);
 
     const selectedProduct =
-        baseData?.products?.find((p) => p.id === selectedProductId) || null;
+        baseData?.products?.find(
+            (p) => (p._id || p.id) === selectedProductId
+        ) || null;
 
     const baseValues = selectedProduct
         ? {
-              fixedCost: baseData.fixedCost ?? "",
+              fixedCost: selectedProduct.fixedCost ?? baseData.fixedCost ?? "",
               variableCostPerUnit: selectedProduct.variableCostPerUnit ?? "",
               pricePerUnit: selectedProduct.pricePerUnit ?? "",
           }
@@ -136,6 +123,7 @@ export default function PricingSimulator({ baseData, onUpdate }) {
                 pricePerUnit: baseValues.pricePerUnit,
                 newPrice: baseValues.pricePerUnit,
             });
+
             setResult(optimal);
 
             if (onUpdate) {
@@ -161,7 +149,7 @@ export default function PricingSimulator({ baseData, onUpdate }) {
             fixedCost: baseValues.fixedCost,
             variableCostPerUnit: baseValues.variableCostPerUnit,
             pricePerUnit: baseValues.pricePerUnit,
-            newPrice: newPrice,
+            newPrice,
         });
 
         setResult(calculated);
@@ -172,7 +160,6 @@ export default function PricingSimulator({ baseData, onUpdate }) {
         }
     }
 
-    // ⭐ Save Scenario to Database
     async function handleSaveScenario() {
         if (!result || result.error || !selectedProduct) {
             alert("Run a valid What-If analysis before saving!");
@@ -182,8 +169,8 @@ export default function PricingSimulator({ baseData, onUpdate }) {
         const user = JSON.parse(localStorage.getItem("loggedUser"));
 
         const scenario = {
-            username: user.username,
-            productId: selectedProduct.id,
+            ownerId: user.ownerId,
+            productId: selectedProduct._id || selectedProduct.id,
             productName: selectedProduct.name,
             newPrice: sliderValue,
             variableCost: baseValues.variableCostPerUnit,
@@ -192,14 +179,14 @@ export default function PricingSimulator({ baseData, onUpdate }) {
             profitMargin: result.new.profitMargin,
             totalProfit: result.new.totalProfit,
             totalRevenue: result.new.revenue,
-            timestamp: Date.now()
+            timestamp: Date.now(),
         };
 
         try {
             const res = await fetch("http://localhost:5001/api/pricing-scenarios", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(scenario)
+                body: JSON.stringify(scenario),
             });
 
             const data = await res.json();
@@ -211,9 +198,11 @@ export default function PricingSimulator({ baseData, onUpdate }) {
         }
     }
 
+
     const minPrice = selectedProduct
         ? Math.floor(Number(selectedProduct.variableCostPerUnit))
         : 0;
+
     const maxPrice = selectedProduct
         ? Math.ceil(Number(selectedProduct.pricePerUnit) * 3)
         : 100;
@@ -222,7 +211,7 @@ export default function PricingSimulator({ baseData, onUpdate }) {
         <div className="pricing-card">
             <div className="pricing-header">
                 <div className="pricing-icon-wrapper">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <svg width="24" height="24" viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2">
                         <line x1="12" y1="1" x2="12" y2="23"></line>
                         <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
                     </svg>
@@ -239,7 +228,7 @@ export default function PricingSimulator({ baseData, onUpdate }) {
                         onChange={(e) => handleProductChange(e.target.value)}
                     >
                         {baseData.products.map((p) => (
-                            <option key={p.id} value={p.id}>
+                            <option key={p._id || p.id} value={p._id || p.id}>
                                 {p.name}
                             </option>
                         ))}
@@ -264,6 +253,7 @@ export default function PricingSimulator({ baseData, onUpdate }) {
                     >
                         From Data
                     </button>
+
                     <button
                         type="button"
                         className={`pricing-toggle-btn ${mode === "whatIf" ? "pricing-toggle-btn--active" : ""}`}
@@ -287,7 +277,7 @@ export default function PricingSimulator({ baseData, onUpdate }) {
             {mode === "readOnly" && selectedProduct && result && !result.error && (
                 <div className="pricing-optimal-card">
                     <div className="optimal-header">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <svg width="20" height="20" viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2">
                             <path d="M22 11.08V12a10 10 0 11-5.93-9.14"></path>
                             <polyline points="22 4 12 14.01 9 11.01"></polyline>
                         </svg>
@@ -310,6 +300,7 @@ export default function PricingSimulator({ baseData, onUpdate }) {
                                     {(result.optimalPrice - baseValues.variableCostPerUnit - result.fixedCostPerUnit).toFixed(2)} SAR
                                 </span>
                             </div>
+
                             <div className="projection-item">
                                 <span className="projection-label">Profit Margin</span>
                                 <span className="projection-value optimal-highlight">
@@ -329,12 +320,14 @@ export default function PricingSimulator({ baseData, onUpdate }) {
                                 {result.current.price.toFixed(2)} SAR
                             </span>
                         </div>
+
                         <div className="comparison-item">
                             <span className="comparison-label">Current Profit/Unit</span>
                             <span className="comparison-value">
                                 {result.current.profitPerUnit.toFixed(2)} SAR
                             </span>
                         </div>
+
                         <div className="comparison-item">
                             <span className="comparison-label">Current Margin</span>
                             <span className="comparison-value">
@@ -411,7 +404,6 @@ export default function PricingSimulator({ baseData, onUpdate }) {
                         </div>
                     )}
 
-                    {/* ⭐ The full-width CTA button */}
                     {result && !result.error && (
                         <button onClick={handleSaveScenario} className="save-scenario-btn">
                             Save Scenario
@@ -420,7 +412,7 @@ export default function PricingSimulator({ baseData, onUpdate }) {
 
                     {result && result.error && (
                         <div className="pricing-error">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <svg width="20" height="20" stroke="currentColor" fill="none" strokeWidth="2">
                                 <circle cx="12" cy="12" r="10"></circle>
                                 <line x1="15" y1="9" x2="9" y2="15"></line>
                                 <line x1="9" y1="9" x2="15" y2="15"></line>

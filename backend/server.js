@@ -8,17 +8,19 @@ const cors = require("cors");
 const connectDB = require("./src/config/db");
 const path = require("path");
 
-
-
-
 // Core routes
 const userRoutes = require("./src/routes/userRoutes");
 const businessDataRoutes = require("./src/routes/businessDataRoutes");
 const advisorRoute = require("./src/routes/advisorRoutes/advisorRoute");
-const advisorTicketRoutes = require("./src/routes/advisorRoutes/advisorTicketRoutes");
 const ownerAdvisorRoutes = require("./src/routes/advisorRoutes/ownerAdvisorRoutes");
 const ownerRoutes = require("./src/routes/OwnerRoutes");
-const scenarioRoutes = require("./src/routes/scenarioRoutes"); 
+const feedbackRoutes = require("./src/routes/feedbackRoutes");
+
+
+// Pricing Scenarios (THE CORRECT ONE)
+const pricingScenarioRoutes = require("./src/routes/pricingScenarioRoutes");
+
+// Manager-level routes
 const managerUserRoutes = require("./src/routes/ManagerRoutes/User");
 const ticketRoutes = require("./src/routes/ManagerRoutes/TicketRoutes");
 const assignmentRoutes = require("./src/routes/ManagerRoutes/AssignmentRoutes");
@@ -43,19 +45,31 @@ app.get("/", (req, res) => {
 // ===============================
 //  ROUTES
 // ===============================
+
+// Advisors / Owners
 app.use("/api/users", userRoutes);
 app.use("/api/business-data", businessDataRoutes);
 app.use("/api/advisor", advisorRoute);
-app.use("/api/advisor", advisorTicketRoutes);
 app.use("/api/link", ownerAdvisorRoutes);
 app.use("/api/owner", ownerRoutes);
-app.use("/api/pricing-scenarios", scenarioRoutes);
-app.use("/api/users", managerUserRoutes);
+
+// Pricing Scenarios (NEW SYSTEM ONLY)
+app.use("/api/pricing-scenarios", pricingScenarioRoutes);
+
+// Manager routes
+app.use("/api/manager/users", managerUserRoutes);
 app.use("/api/tickets", ticketRoutes);
 app.use("/api/assignments", assignmentRoutes);
+
+// Serve uploaded files
+app.use("/uploads", express.static(path.join(__dirname, "src", "uploads")));
+app.use("/api/break-even-scenarios",require("./src/routes/breakEvenScenarioRoutes"));
+app.use("/api/business-data", require("./src/routes/businessDataOwnerRoute"));
+
 // serve uploaded files
 app.use("/uploads", express.static(path.join(__dirname, "src", "uploads")));
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/feedback", feedbackRoutes);
 // ===============================
 //  START SERVER
 // ===============================

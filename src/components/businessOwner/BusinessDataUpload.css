@@ -712,3 +712,25 @@ body[data-theme="dark"] .upload-success-message {
     border-color: #0ACF83;
     color: #0ACF83;
 }
+.bep-save-btn {
+    margin-top: 12px;
+    background: linear-gradient(135deg, #2bb3ff, #1586d1);
+    color: #fff;
+    padding: 10px 18px;
+    border-radius: 10px;
+    border: none;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    transition: 0.15s ease;
+}
+
+.bep-save-btn:hover {
+    background: linear-gradient(135deg, #33c4ff, #1a92e0);
+    transform: translateY(-1px);
+}
+
+.bep-save-btn:active {
+    transform: scale(0.98);
+}

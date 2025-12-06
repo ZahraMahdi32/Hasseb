@@ -37,41 +37,21 @@ Highlights upcoming weeks or months when outgoing costs such as packaging, shipp
 Explore "what-if" scenarios by adjusting product prices and instantly seeing the projected impact on revenue and profit.
 
 ## Tech Stack
-### Frontend
-- **Framework:** React 19.2.0
+- **Frontend:** React 19.2.0
 - **UI Framework:** React Bootstrap 2.10.10, Bootstrap 5.3.8
-- **Charts:** Recharts 3.4.1, Chart.js with react-chartjs-2
+- **Charts:** Recharts 3.4.1
 - **Icons:** Lucide React, React Icons
-- **HTTP Client:** Axios
-- **Routing:** React Router DOM
 - **Build Tool:** Create React App (react-scripts 5.0.1)
-- 
-
-### Backend
-- **Runtime:** Node.js
-- **Framework:** Express 5.1.0
-- **Database:** MongoDB 7.0.0 with Mongoose 9.0.0
-- **Authentication:** bcryptjs 3.0.3
-- **File Upload:** Multer 2.0.2
-- **Excel Processing:** xlsx 0.18.5
-- **Email:** Nodemailer 7.0.11
-- **Environment Variables:** dotenv 17.2.3
-- **CORS:** cors 2.8.5
-
 
 ## Getting Started
 
 ### Prerequisites
 
 Make sure you have the following installed:
-
-- [Node.js](https://nodejs.org/) (v18 or higher required for backend)
+- [Node.js](https://nodejs.org/) (v16 or higher recommended)
 - npm (comes with Node.js)
-- MongoDB (local installation or MongoDB Atlas account)
 
 ### Installation
-
-#### Frontend Setup
 
 1. **Clone the repository**
    ```bash
@@ -84,7 +64,7 @@ Make sure you have the following installed:
    npm install
    ```
 
-3. **Install React-Bootstrap and Bootstrap**
+3. **Install React-Bootstrap and Bootstrap** (if not already installed)
    ```bash
    npm install react-bootstrap bootstrap
    ```
@@ -104,101 +84,12 @@ Make sure you have the following installed:
    npm install lucide-react
    ```
 
-7. **Install Axios**
-   ```bash
-   npm install axios
-   ```
-
-8. **Install Chart.js and React Chart.js 2**
-   ```bash
-   npm install chart.js react-chartjs-2
-   ```
-
-9. **Install Recharts**
-   ```bash
-   npm install recharts
-   ```
-
-#### Backend Setup
-
-1. **Navigate to the backend directory**
-   ```bash
-   cd backend
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Install Express**
-   ```bash
-   npm install express
-   ```
-
-4. **Install MongoDB and Mongoose**
-   ```bash
-   npm install mongodb mongoose
-   ```
-
-5. **Install bcryptjs** (for password hashing)
-   ```bash
-   npm install bcryptjs
-   ```
-
-6. **Install Multer** (for file uploads)
-   ```bash
-   npm install multer
-   ```
-
-7. **Install xlsx** (for Excel file processing)
-   ```bash
-   npm install xlsx
-   ```
-
-8. **Install Nodemailer** (for sending emails)
-   ```bash
-   npm install nodemailer
-   ```
-
-9. **Install dotenv** (for environment variables)
-   ```bash
-   npm install dotenv
-   ```
-
-10. **Install CORS**
-    ```bash
-    npm install cors
-    ```
-
-11. **Install Nodemon** (for development)
-    ```bash
-    npm install --save-dev nodemon
-    ```
-
-12. **Set up environment variables**
-
-    Create a `.env` file in the `backend` directory with your configuration:
-    ```env
-    MONGODB_URI=your_mongodb_connection_string
-    PORT=5000
-    ```
-
-#### Running the Application
-
-1. **Start the backend server**
-   ```bash
-   cd backend
-   npm run dev
-   ```
-
-2. **Start the frontend development server** (in a new terminal)
+7. **Start the development server**
    ```bash
    npm start
    ```
 
-3. Open [http://localhost:3000](http://localhost:3000) in your browser to view the application.
-
+5. Open [http://localhost:3000](http://localhost:3000) in your browser to view the application.
 
 ## Usage
 
@@ -210,72 +101,18 @@ After starting the application:
 4. **Business Owner View** — Access financial simulation tools
 
 
-# Project Structure
-
-### Overview
+## Project Structure
 
 ```
 Hasseb/
-├── backend/
 ├── public/
-├── src/
-├── .gitignore
-├── package.json
-├── package-lock.json
-├── LICENSE
-└── README.md
-```
-
-### Backend Structure
-
-```
-backend/
-├── node_modules/
-├── src/
-│   ├── config/
-│   │   └── db.js
-│   ├── models/
-│   │   ├── advisorModels/
-│   │   │   └── ...
-│   │   ├── Assignment.js
-│   │   ├── BusinessData.js
-│   │   ├── Notification.js
-│   │   ├── Owner.js
-│   │   ├── Scenario.js
-│   │   ├── SupportTicket.js
-│   │   ├── Ticket.js
-│   │   └── User.js
-│   ├── routes/
-│   │   ├── advisorRoutes/
-│   │   │   ├── advisorRoute.js
-│   │   │   ├── advisorTicketRoutes.js
-│   │   │   ├── feedback.js
-│   │   │   └── ownerAdvisorRoutes.js
-│   │   ├── ManagerRoutes/
-│   │   │   ├── AssignmentRoutes.js
-│   │   │   ├── TicketRoutes.js
-│   │   │   └── User.js
-│   │   ├── businessDataRoutes.js
-│   │   ├── NotificationRoutes.js
-│   │   ├── OwnerRoutes.js
-│   │   ├── scenarioRoutes.js
-│   │   └── userRoutes.js
-│   └── utils/
-│       ├── email.js
-│       └── riskEngine.js
-├── .env
-├── package.json
-├── package-lock.json
-└── server.js
-```
-### Frontend Structure
-
-```
-Haseeb/
-├── .idea/
-├── backend/
-├── node_modules/
-├── public/
+│   ├── assets/
+│   │   ├── Haseeb.png
+│   │   ├── HaseebLogo.png
+│   │   ├── Hassseb11.png
+│   │   ├── HASEEB.png
+│   │   └── Haseeb-Business-Template.xlsx
+│   └── index.html
 ├── src/
 │   ├── components/
 │   │   ├── AdivosrComponents/
@@ -285,61 +122,47 @@ Haseeb/
 │   │   │   ├── BreakEvenSimulationPanel.jsx
 │   │   │   ├── DashboardAdvisorPanel.jsx
 │   │   │   ├── FeedbackPanel.jsx
-│   │   │   ├── index.css
-│   │   │   ├── NotificationsPanel.jsx
 │   │   │   ├── RiskDetailsPanel.jsx
 │   │   │   ├── SupportPanel2.jsx
 │   │   │   └── TicketDetailsPanel.jsx
 │   │   ├── businessOwner/
-│   │   │   ├── AccountPanel.jsx
-│   │   │   ├── BreakEvenCalculator.css
 │   │   │   ├── BreakEvenCalculator.jsx
-│   │   │   ├── BusinessDataUpload.css
+│   │   │   ├── BreakEvenCalculator.css
 │   │   │   ├── BusinessDataUpload.jsx
+│   │   │   ├── BusinessDataUpload.css
 │   │   │   ├── BusinessOwnerHome.jsx
-│   │   │   ├── BusinessOwnerLayout.jsx
-│   │   │   ├── BusinessOwnerSupport.jsx
-│   │   │   ├── BusinessOwnerTicketDetails.jsx
-│   │   │   ├── CashFlowTool.css
+│   │   │   ├── BusinessOwnerHome.css
 │   │   │   ├── CashFlowTool.jsx
+│   │   │   ├── CashFlowTool.css
 │   │   │   ├── InsightEngine.js
-│   │   │   ├── NotificationsPanel.jsx
-│   │   │   ├── OwnerDashboardPanel.css
 │   │   │   ├── OwnerDashboardPanel.jsx
-│   │   │   ├── PricingSimulator.css
+│   │   │   ├── OwnerDashboardPanel.css
 │   │   │   ├── PricingSimulator.jsx
-│   │   │   ├── ScenarioComparison.css
-│   │   │   └── ScenarioComparison.jsx
+│   │   │   └── PricingSimulator.css
 │   │   ├── Home/
-│   │   │   ├── ForgotPasswordPage.jsx
-│   │   │   ├── Haseebauth.css
 │   │   │   ├── Haseebauth.jsx
-│   │   │   ├── HaseebHomePage.css
-│   │   │   └── HaseebHomePage.jsx
+│   │   │   ├── Haseebauth.css
+│   │   │   ├── HaseebHomePage.jsx
+│   │   │   └── HaseebHomePage.css
 │   │   └── Mangercopnents/
 │   │       ├── AccountPanel.jsx
 │   │       ├── Layout.jsx
 │   │       ├── NotificationsPanel.jsx
 │   │       └── Panels.jsx
-│   ├── SharedStyles/
-│   │   ├── AccountPanel.css
-│   │   ├── global.css
-│   │   ├── Layout.css
-│   │   ├── Notifications.css
-│   │   ├── SharedSupport.css
-│   │   └── SharedTicketDetails.css
-│   ├── utils/
-│   │   └── excelParser.js
-│   ├── Advisor.jsx
+│   ├── data/
+│   │   └── bepTestData.js
+│   ├── styles/
+│   │   └── global.css
 │   ├── App.jsx
-│   ├── index.css
+│   ├── Advisor.jsx
+│   ├── Manger.jsx
 │   ├── index.js
-│   ├── information.js
-│   └── Manger.jsx
+│   ├── index.css
+│   └── information.js
 ├── .gitignore
-├── LICENSE
 ├── package.json
 ├── package-lock.json
+├── LICENSE
 └── README.md
 ```
 
@@ -357,4 +180,3 @@ Haseeb/
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-

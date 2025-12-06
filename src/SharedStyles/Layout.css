@@ -436,6 +436,27 @@ button.sidebar-neo__logout {
     align-items: center;
     justify-content: center;
 }
+.pm-backdrop-fixed {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+  z-index: 1040;
+}
+/* Backdrop behind sidebar */
+.pm-backdrop-fixed {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+  z-index: 1040; /* behind sidebar */
+}
+
+/* Sidebar on top */
+.sidebar-neo {
+  position: fixed;
+  z-index: 1050; /* above backdrop */
+}
 
 /* ================================
    DARK THEME

@@ -1,135 +1,77 @@
-// InsightEngine.js
+// InsightEngine.js — FIXED FOR MONGODB STRUCTURE
 
 export function generateDashboardInsights(baseData) {
     if (!baseData) return null;
 
-    const { fixedCost, products, cashFlow } = baseData;
+    const contributionMargin = baseData.products || [];
+    const cashFlow = baseData.cashFlow || [];
+    const pricingSensitivity = baseData.pricingScenarios || [];
 
-    // -----------------------------
-    // Break-even insights
-    // -----------------------------
+    // -----------------------------------------------------
+    // BREAK-EVEN INSIGHTS (from products)
+    // -----------------------------------------------------
     const bepInsights = [];
 
-    if (Array.isArray(products) && products.length > 0 && fixedCost != null) {
-        products.forEach((p) => {
-            const cm = Number(p.pricePerUnit) - Number(p.variableCostPerUnit);
-
-            if (isNaN(cm)) return;
+    if (Array.isArray(contributionMargin) && contributionMargin.length > 0) {
+        contributionMargin.forEach((row) => {
+            const cm = Number(row.cm) || 0;                    // CM per unit
+            const breakUnits = Number(row.breakEvenUnits) || 0;
 
             if (cm <= 0) {
                 bepInsights.push({
-                    product: p.name,
+                    product: row.name,
                     issue: true,
-                    message: `${p.name} cannot break even because its price is lower than its variable cost.`
+                    message: `${row.name} cannot break even because CM is 0 or negative.`
                 });
             } else {
-                const units = Math.ceil(Number(fixedCost) / cm);
                 bepInsights.push({
-                    product: p.name,
+                    product: row.name,
                     issue: false,
-                    breakEvenUnits: units,
-                    message: `${p.name} needs around ${units.toLocaleString()} units to cover fixed costs.`
+                    breakEvenUnits: breakUnits,
+                    message: `${row.name} needs ${breakUnits.toLocaleString()} units to break even.`
                 });
             }
         });
     }
 
-    // -----------------------------
-    // Pricing insights
-    // -----------------------------
-    const pricingInsights = (products || []).map((p) => {
-        const price = Number(p.pricePerUnit) || 0;
-        const varCost = Number(p.variableCostPerUnit) || 0;
-
-        const margin =
-            price > 0 ? ((price - varCost) / price) * 100 : 0;
+    // -----------------------------------------------------
+    // PRICING INSIGHTS (based on products)
+    // -----------------------------------------------------
+    const pricingInsights = (contributionMargin || []).map((row) => {
+        const price = Number(row.pricePerUnit) || 0;
+        const varCost = Number(row.variableCostPerUnit) || 0;
+        const margin = price > 0 ? ((price - varCost) / price) * 100 : 0;
 
         return {
-            product: p.name,
+            product: row.name,
             margin,
             opportunity:
                 margin < 30
-                    ? "Low margin — consider slight price increase."
+                    ? "Low margin — consider raising price."
                     : margin > 60
-                    ? "High margin — good pricing power."
+                    ? "High margin — premium pricing viable."
                     : "Healthy margin."
         };
     });
 
-    // -----------------------------
-    // CASH FLOW INSIGHTS (REAL BURN RATE)
-    // -----------------------------
-    let cashInsights = {
-        realBurnRate: 0,
-        dangerMonths: 0,
-        firstDangerMonth: null,
-        isHealthy: true
-    };
+    // -----------------------------------------------------
+    // CASH FLOW INSIGHTS
+    // -----------------------------------------------------
+    const cashInsights = computeCashFlowMetrics(cashFlow);
 
-    if (Array.isArray(cashFlow) && cashFlow.length > 0) {
-        let running =
-            cashFlow[0].runningBalance != null
-                ? Number(cashFlow[0].runningBalance)
-                : 0;
-
-        const danger = [];
-        const netFlows = [];
-
-        cashFlow.forEach((row, i) => {
-            const cashIn = Number(row.cashIn) || 0;
-            const cashOut = Number(row.cashOut) || 0;
-
-            const net = cashIn - cashOut;
-            netFlows.push(net);
-
-            if (i !== 0 || row.runningBalance == null) {
-                running += net;
-            }
-
-            if (running < 0) {
-                danger.push({ month: row.date, balance: running });
-            }
-        });
-
-        // Real burn rate = average of negative months only
-        const negativeMonths = netFlows.filter((n) => n < 0);
-        const realBurnRate =
-            negativeMonths.length > 0
-                ? Math.abs(
-                      negativeMonths.reduce((sum, n) => sum + n, 0) /
-                          negativeMonths.length
-                  )
-                : 0;
-
-        cashInsights = {
-            realBurnRate,
-            dangerMonths: danger.length,
-            firstDangerMonth: danger[0]?.month || null,
-            isHealthy: danger.length === 0
-        };
-    }
-
-    // -----------------------------
-    // Overall health score
-    // -----------------------------
-    const scoreParts = [];
-
-    const healthyProductsCount =
-        pricingInsights.filter((p) => p.margin > 40).length;
-    scoreParts.push(healthyProductsCount * 5);
-
-    scoreParts.push(cashInsights.isHealthy ? 60 : 20);
-
-    const healthScore = Math.min(
-        100,
-        scoreParts.reduce((a, b) => a + b, 0)
-    );
+    // -----------------------------------------------------
+    // HEALTH SCORE
+    // -----------------------------------------------------
+    const healthScore =
+        (pricingInsights.filter((p) => p.margin > 40).length * 5) +
+        (cashInsights.isHealthy ? 60 : 20);
 
     return {
         bepInsights,
         pricingInsights,
+        pricingSensitivity,
         cashInsights,
-        healthScore,
+        healthScore: Math.min(100, healthScore),
         recommendations: buildRecommendations(
             bepInsights,
             pricingInsights,
@@ -138,33 +80,71 @@ export function generateDashboardInsights(baseData) {
     };
 }
 
+// -----------------------------------------------------
+// CASH FLOW METRICS
+// -----------------------------------------------------
+function computeCashFlowMetrics(cashFlow = []) {
+    if (!Array.isArray(cashFlow) || cashFlow.length === 0) {
+        return {
+            realBurnRate: 0,
+            dangerMonths: 0,
+            firstDangerMonth: null,
+            isHealthy: true
+        };
+    }
+
+    let running = Number(cashFlow[0].runningBalance || 0);
+    const negatives = [];
+    let sumNeg = 0, negCount = 0;
+
+    cashFlow.forEach((row, i) => {
+        const net = Number(row.netCashFlow || 0);
+
+        if (i !== 0) running += net;
+
+        if (net < 0) {
+            sumNeg += net;
+            negCount++;
+        }
+        if (running < 0) {
+            negatives.push(row.date);
+        }
+    });
+
+    return {
+        realBurnRate: negCount ? Math.abs(sumNeg / negCount) : 0,
+        dangerMonths: negatives.length,
+        firstDangerMonth: negatives[0] || null,
+        isHealthy: negatives.length === 0
+    };
+}
+
+// -----------------------------------------------------
+// RECOMMENDATIONS ENGINE
+// -----------------------------------------------------
 function buildRecommendations(bepInsights, pricingInsights, cashInsights) {
     const recs = [];
 
     if (cashInsights.dangerMonths > 0) {
         recs.push(
-            `Cash reserves may become negative starting ${cashInsights.firstDangerMonth}. Reduce expenses or boost revenue before then.`
+            `Cash may turn negative starting ${cashInsights.firstDangerMonth}.`
         );
     }
 
     pricingInsights.forEach((p) => {
         if (p.margin < 30) {
-            recs.push(
-                `${p.product} has a low profit margin — consider increasing price.`
-            );
+            recs.push(`${p.product} has a low margin — consider increasing price.`);
         }
     });
 
     bepInsights.forEach((b) => {
         if (b.issue) {
-            recs.push(
-                `Review cost structure of ${b.product}. It cannot break even.`
-            );
+            recs.push(`Review cost structure for ${b.product}; cannot break even.`);
         }
     });
 
     if (recs.length === 0) {
-        recs.push("Your business fundamentals look healthy. Maintain momentum.");
+        recs.push("Your business looks healthy. Keep going!");
     }
 
     return recs;

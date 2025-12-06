@@ -1,0 +1,36 @@
+.scenario-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.scenario-card {
+  width: 260px;
+  padding: 16px;
+  border-radius: 10px;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.scenario-card:hover {
+  transform: scale(1.02);
+}
+
+.scenario-card.active {
+  border: 2px solid #4CC9F0;
+  background: #ECFBFF;
+}
+
+.scenario-title {
+  font-size: 1.1rem;
+  color: #0F3D57;
+  font-weight: bold;
+}
+
+.scenario-sub {
+  font-size: 0.9rem;
+  color: #555;
+  margin-top: 4px;
+}
