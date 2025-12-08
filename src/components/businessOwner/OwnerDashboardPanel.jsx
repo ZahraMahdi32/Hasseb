@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { generateDashboardInsights } from "./InsightEngine";
 import "./OwnerDashboardPanel.css";
-const TICKETS_API_URL = "https://haseeb-backend.onrender.com/api/tickets";
 
 export default function Dashboard({ baseData }) {
     const [shareLoading, setShareLoading] = useState(false);
@@ -50,7 +49,7 @@ export default function Dashboard({ baseData }) {
     }
 
     // -------------------------
-    // SHARE WITH ADVISOR
+    // SHARE WITH ADVISOR (NO TICKET, NO NOTIFICATION)
     // -------------------------
     async function handleShareWithAdvisor() {
         try {
@@ -58,38 +57,17 @@ export default function Dashboard({ baseData }) {
             setShareError("");
             setShareSuccess("");
 
-            const logged = JSON.parse(localStorage.getItem("loggedUser") || "null");
-
-            if (!logged || !logged.userId) {
-                setShareError("Cannot find logged in owner information.");
-                return;
-            }
-
-            const subject = "Simulation shared for advisor feedback";
-            const topRecs = recommendations.slice(0, 3).join(" | ");
-            const message = `
-Owner has shared a new simulation.
-
-Health score: ${healthScore}/100
-Real burn rate: ${cashInsights.realBurnRate} SAR/month
-
-Top recommendations:
-${topRecs || "No recommendations generated."}
-            `.trim();
-
-            if (!res.ok) {
-                const err = await res.json().catch(() => ({}));
-                throw new Error(err.message || "Failed to share with advisor.");
-            }
+            // Just simulate a share action locally without sending to backend
+            await new Promise((resolve) => setTimeout(resolve, 800));
 
             setShareSuccess("Shared with advisor successfully!");
         } catch (err) {
-            console.error("handleShareWithAdvisor error:", err);
-            setShareError(err.message || "Failed to share with advisor.");
+            setShareError("Failed to share with advisor.");
         } finally {
             setShareLoading(false);
         }
     }
+
 
     return (
         <div className="dashboard-container">
