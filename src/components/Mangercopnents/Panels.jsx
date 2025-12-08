@@ -32,8 +32,8 @@ import {
   CartesianGrid,
 } from "recharts";
 
-const USERS_API_URL = "http://localhost:5001/api/users";
-const TICKETS_API_URL = "http://localhost:5001/api/tickets";
+const USERS_API_URL = "https://haseeb-backend.onrender.com/api/users";
+const TICKETS_API_URL = "https://haseeb-backend.onrender.com/api/tickets";
 
 
 
@@ -552,7 +552,7 @@ export function SettingsPanel({ settings, setSettings, users = [] }) {
   useEffect(() => {
     async function loadAssignments() {
       try {
-        const res = await axios.get("http://localhost:5001/api/assignments");
+        const res = await axios.get("https://haseeb-backend.onrender.com/api/assignments");
         // map to simple shape
         const list = (res.data || []).map((a) => ({
           _id: a._id,
@@ -591,7 +591,7 @@ export function SettingsPanel({ settings, setSettings, users = [] }) {
     }
 
     try {
-      const res = await axios.post("http://localhost:5001/api/assignments", {
+      const res = await axios.post("https://haseeb-backend.onrender.com/api/assignments", {
         advisorId: selectedAdvisorId,
         ownerId: selectedOwnerId,
       });
@@ -619,7 +619,7 @@ export function SettingsPanel({ settings, setSettings, users = [] }) {
   async function removeAssignment(assignmentId) {
     try {
       await axios.delete(
-        `http://localhost:5001/api/assignments/${assignmentId}`
+        `https://haseeb-backend.onrender.com/api/assignments/${assignmentId}`
       );
 
       const next = assignments.filter((a) => a._id !== assignmentId);

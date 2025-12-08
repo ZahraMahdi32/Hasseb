@@ -11,7 +11,7 @@ import {
 } from "react-icons/fi";
 import "../../SharedStyles/SharedSupport.css";
 
-const TICKETS_API_URL = "http://localhost:5001/api/tickets";
+const TICKETS_API_URL = "https://haseeb-backend.onrender.com/api/tickets";
 
 export default function BusinessOwnerSupport({ setSelectedTicket, setTab }) {
   // Read the logged-in user that you saved on login

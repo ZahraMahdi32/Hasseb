@@ -231,7 +231,7 @@ export default function PricingSimulator({ baseData, onUpdate }) {
 
         try {
             const res = await fetch(
-                "http://localhost:5001/api/pricing-scenarios",
+                "https://haseeb-backend.onrender.com/api/pricing-scenarios",
                 {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },

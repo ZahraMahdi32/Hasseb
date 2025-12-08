@@ -64,7 +64,7 @@ export default function OwnerHome() {
             }
 
             const response = await fetch(
-                `http://localhost:5001/api/business-data/owner/${ownerId}`
+                `https://haseeb-backend.onrender.com/api/business-data/owner/${ownerId}`
             );
 
             const result = await response.json();

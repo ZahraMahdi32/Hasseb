@@ -40,7 +40,7 @@ export default function RecommendationsPanel({ owners = [], advisorId }) {
   const loadScenarios = async () => {
     try {
       const res = await axios.get(
-        `http://localhost:5001/api/pricing-scenarios/${ownerId}`
+        `https://haseeb-backend.onrender.com/api/pricing-scenarios/${ownerId}`
       );
       if (res.data.success) setScenarios(res.data.scenarios || []);
       else setScenarios([]);
@@ -53,7 +53,7 @@ export default function RecommendationsPanel({ owners = [], advisorId }) {
   const loadScenarioRecommendations = async () => {
     try {
       const res = await axios.get(
-        `http://localhost:5001/api/advisor/recommendations/${advisorId}`
+        `https://haseeb-backend.onrender.com/api/advisor/recommendations/${advisorId}`
       );
       const all = res.data || [];
       setRecItems(all.filter((x) => x.scenarioId && x.ownerId === ownerId));
@@ -65,7 +65,7 @@ export default function RecommendationsPanel({ owners = [], advisorId }) {
   const loadGeneralRecommendations = async () => {
       try {
         const res = await axios.get(
-          `http://localhost:5001/api/advisor/recommendations/${advisorId}`
+          `https://haseeb-backend.onrender.com/api/advisor/recommendations/${advisorId}`
         );
         const all = res.data || [];
         setGeneralItems(all.filter((x) => !x.scenarioId && x.ownerId === ownerId));
@@ -80,7 +80,7 @@ export default function RecommendationsPanel({ owners = [], advisorId }) {
 
       try {
         const res = await axios.post(
-          "http://localhost:5001/api/advisor/recommendations",
+          "https://haseeb-backend.onrender.com/api/advisor/recommendations",
           {
             advisorId,
             ownerId,

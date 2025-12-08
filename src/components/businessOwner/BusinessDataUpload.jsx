@@ -130,7 +130,7 @@ export default function BusinessDataUpload({ onUploadSuccess }) {
             // Step 3: Upload to backend
             setUploadProgress("⬆️ Uploading to server…");
 
-            const response = await fetch("http://localhost:5001/api/business-data/upload", {
+            const response = await fetch("https://haseeb-backend.onrender.com/api/business-data/upload", {
                 method: "POST",
                 body: formData
             });

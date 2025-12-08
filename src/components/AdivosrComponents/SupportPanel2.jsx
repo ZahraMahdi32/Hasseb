@@ -11,7 +11,7 @@ import {
 } from "react-icons/fi";
 import "../../SharedStyles/SharedSupport.css";
 
-const API_BASE = "http://localhost:5001/api";
+const API_BASE = "https://haseeb-backend.onrender.com/api";
 
 export default function SupportPanel2({ setSelectedTicket, setTab }) {
   let loggedUser = null;

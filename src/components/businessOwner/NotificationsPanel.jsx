@@ -14,7 +14,7 @@ export default function NotificationsPanel() {
     async function load() {
       try {
         const res = await axios.get(
-            `http://localhost:5001/api/owner/notifications/${ownerId}`
+            `https://haseeb-backend.onrender.com/api/owner/notifications/${ownerId}`
         );
         setNotifications(res.data.notifications || []);
       } catch (err) {

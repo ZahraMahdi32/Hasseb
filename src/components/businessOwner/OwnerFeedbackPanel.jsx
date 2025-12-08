@@ -9,7 +9,7 @@ export default function OwnerFeedbackPanel({ ownerId }) {
         if (!ownerId) return;
 
         axios
-            .get(`http://localhost:5001/api/advisor/feedback/owner/${ownerId}`)
+            .get(`https://haseeb-backend.onrender.com/api/advisor/feedback/owner/${ownerId}`)
             .then((res) => {
                 setFeedbackList(Array.isArray(res.data) ? res.data : []);
             })

@@ -158,7 +158,7 @@ export default function BreakEvenCalculator({ baseData, onUpdate }) {
         };
 
         try {
-            const res = await fetch("http://localhost:5001/api/break-even-scenarios", {
+            const res = await fetch("https://haseeb-backend.onrender.com/api/break-even-scenarios", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ 

@@ -56,7 +56,7 @@ export default function AccountPanel({ settings, setSettings }) {
           return;
         }
  
-        const res = await axios.get(`http://localhost:5001/api/users/${userId}`);
+        const res = await axios.get(`https://haseeb-backend.onrender.com/api/users/${userId}`);
  
  
         const u = res.data || {};
@@ -100,7 +100,7 @@ const onSave = async () => {
  
     const fullName = `${form.firstName} ${form.lastName}`.trim();
  
-      await axios.put(`http://localhost:5001/api/users/${accountMeta.id}`, {
+      await axios.put(`https://haseeb-backend.onrender.com/api/users/${accountMeta.id}`, {
         name: fullName,
         email: form.email,
         role: accountMeta.role,

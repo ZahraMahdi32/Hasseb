@@ -16,7 +16,7 @@ export default function NotificationsPanel() {
     try {
       setLoading(true);
       const res = await fetch(
-        `http://localhost:5001/api/notifications?userId=${userId}`
+        `https://haseeb-backend.onrender.com/api/notifications?userId=${userId}`
       );
 
       const data = await res.json();
@@ -31,7 +31,7 @@ export default function NotificationsPanel() {
   // Dismiss (mark as read)
   async function dismiss(id) {
     try {
-      await fetch(`http://localhost:5001/api/notifications/${id}/read`, {
+      await fetch(`https://haseeb-backend.onrender.com/api/notifications/${id}/read`, {
         method: "POST",
       });
 

@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { FiArrowLeft, FiSend, FiAlertCircle } from "react-icons/fi";
 import "../../SharedStyles/SharedSupport.css";
 
-const API_BASE = "http://localhost:5001/api";
+const API_BASE = "https://haseeb-backend.onrender.com/api";
 
 export default function TicketDetailsPanel({ ticket, setTab }) {
   // Read logged user (saved on login by HaseebAuth)

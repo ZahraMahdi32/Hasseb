@@ -23,7 +23,7 @@ export default function FeedbackPanel({
   const fetchFeedback = async () => {
     try {
       const res = await axios.get(
-        `http://localhost:5001/api/advisor/feedback/all/${advisorId}`
+        `https://haseeb-backend.onrender.com/api/advisor/feedback/all/${advisorId}`
       );
 
       const list = Array.isArray(res.data) ? res.data : res.data.feedback;
@@ -44,7 +44,7 @@ export default function FeedbackPanel({
 
     setSending(true);
     try {
-      const res = await axios.post("http://localhost:5001/api/advisor/feedback", {
+      const res = await axios.post("https://haseeb-backend.onrender.com/api/advisor/feedback", {
           advisorId,
           ownerId,
           content
@@ -75,7 +75,7 @@ export default function FeedbackPanel({
 
     try {
       const res = await axios.put(
-        `http://localhost:5001/api/advisor/feedback/${active}`,
+        `https://haseeb-backend.onrender.com/api/advisor/feedback/${active}`,
         { content: editText }
       );
 
@@ -102,7 +102,7 @@ export default function FeedbackPanel({
   const deleteFeedback = async (id) => {
     try {
       await axios.delete(
-        `http://localhost:5001/api/advisor/feedback/${id}`
+        `https://haseeb-backend.onrender.com/api/advisor/feedback/${id}`
       );
 
       setItems(prev => prev.filter(it => it._id !== id));

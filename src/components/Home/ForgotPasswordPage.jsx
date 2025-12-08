@@ -43,7 +43,7 @@ export default function ForgotPassword() {
   const verifyUser = async (e) => {
     e.preventDefault();
 
-    const res = await fetch("http://localhost:5001/api/users/forgot-password/verify", {
+    const res = await fetch("https://haseeb-backend.onrender.com/api/users/forgot-password/verify", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(verifyData),
@@ -63,7 +63,7 @@ export default function ForgotPassword() {
     if (resetData.newPassword !== resetData.confirmPassword)
       return alert("Passwords do not match");
 
-    const res = await fetch("http://localhost:5001/api/users/forgot-password/reset", {
+    const res = await fetch("https://haseeb-backend.onrender.com/api/users/forgot-password/reset", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

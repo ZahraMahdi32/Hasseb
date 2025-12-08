@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { FiArrowLeft, FiSend, FiAlertCircle } from "react-icons/fi";
 import "../../SharedStyles/SharedTicketDetails.css";
 
-const API_BASE = "http://localhost:5001/api";
+const API_BASE = "https://haseeb-backend.onrender.com/api";
 
 export default function BusinessOwnerTicketDetails({ ticket, setTab }) {
   // Read logged user

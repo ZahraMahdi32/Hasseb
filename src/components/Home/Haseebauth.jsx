@@ -98,7 +98,7 @@ export default function HaseebAuth() {
         e.preventDefault();
 
         if (isLogin) {
-            const res = await fetch("http://localhost:5001/api/users/login", {
+            const res = await fetch("https://haseeb-backend.onrender.com/api/users/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -136,7 +136,7 @@ export default function HaseebAuth() {
             );
         }
 
-        const res = await fetch("http://localhost:5001/api/users/signup", {
+        const res = await fetch("https://haseeb-backend.onrender.com/api/users/signup", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(formData)

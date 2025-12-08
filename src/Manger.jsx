@@ -11,7 +11,7 @@ import {
 import NotificationsPanel from "./components/Mangercopnents/NotificationsPanel.jsx";
 import AccountPanel from "./components/Mangercopnents/AccountPanel.jsx";
 import { loadState, saveState } from "./information.js";
-const USERS_API_URL = "http://localhost:5001/api/users";
+const USERS_API_URL = "https://haseeb-backend.onrender.com/api/users";
 
 export default function Manger() {
   

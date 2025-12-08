@@ -27,13 +27,13 @@ export default function Advisor() {
     try {
       // Fetch owners
       const res = await fetch(
-        `http://localhost:5001/api/advisor/dashboard/${advisorId}`
+        `https://haseeb-backend.onrender.com/api/advisor/dashboard/${advisorId}`
       );
       const data = await res.json();
       setOwners(data.owners || []);
     // Fetch feedback (correct route after switching to User model)
     const fb = await fetch(
-      `http://localhost:5001/api/advisor/feedback/all/${advisorId}`
+      `https://haseeb-backend.onrender.com/api/advisor/feedback/all/${advisorId}`
     );
     const fbData = await fb.json();
 

@@ -26,7 +26,7 @@ export default function AnalyzerPanel({ advisorId, setTab }) {
       try {
         setLoadingOwners(true);
         const res = await axios.get(
-          `http://localhost:5001/api/advisor/owners/${advisorId}`
+          `https://haseeb-backend.onrender.com/api/advisor/owners/${advisorId}`
         );
 
         const ownersList = res.data?.owners || [];
@@ -56,7 +56,7 @@ export default function AnalyzerPanel({ advisorId, setTab }) {
         setLoadingOwnerData(true);
 
         const res = await axios.get(
-          `http://localhost:5001/api/business-data/owner/${selectedOwnerId}`
+          `https://haseeb-backend.onrender.com/api/business-data/owner/${selectedOwnerId}`
         );
 
         setBusinessData(res.data?.data || null);

@@ -13,7 +13,7 @@ export default function ScenarioComparison({ ownerId }) {
         async function loadScenarios() {
             try {
                 const res = await fetch(
-                    `http://localhost:5001/api/pricing-scenarios/${ownerId}`
+                    `https://haseeb-backend.onrender.com/api/pricing-scenarios/${ownerId}`
                 );
 
                 const data = await res.json();
@@ -43,7 +43,7 @@ export default function ScenarioComparison({ ownerId }) {
         async function loadRecs() {
             try {
                 const res = await fetch(
-                    `http://localhost:5001/api/advisor/recommendations/owner/${ownerId}`
+                    `https://haseeb-backend.onrender.com/api/advisor/recommendations/owner/${ownerId}`
                 );
                 const data = await res.json();
                 setAdvisorRecs(Array.isArray(data) ? data : []);

@@ -28,7 +28,7 @@ export default function DashboardAdvisorPanel({
   const fetchOwners = async () => {
     try {
       const res = await axios.get(
-        `http://localhost:5001/api/advisor/owners/${advisorId}`
+        `https://haseeb-backend.onrender.com/api/advisor/owners/${advisorId}`
       );
       setOwners(res.data.owners || []);
 
@@ -43,7 +43,7 @@ export default function DashboardAdvisorPanel({
       const user = JSON.parse(localStorage.getItem("loggedUser"));
       const fromUserId = user?.userId || advisorId;
 
-      const res = await axios.get("http://localhost:5001/api/tickets", {
+      const res = await axios.get("https://haseeb-backend.onrender.com/api/tickets", {
         params: { role: "advisor", userId: fromUserId },
       });
 
@@ -57,7 +57,7 @@ export default function DashboardAdvisorPanel({
   const fetchRecommendationCount = async () => {
     try {
       const res = await axios.get(
-        `http://localhost:5001/api/advisor/recommendations/${advisorId}`
+        `https://haseeb-backend.onrender.com/api/advisor/recommendations/${advisorId}`
       );
       const items = res.data?.recommendations || res.data || [];
       setRecommendationCount(items.length);
@@ -70,7 +70,7 @@ export default function DashboardAdvisorPanel({
   const fetchNotifications = async () => {
     try {
       const res = await axios.get(
-        `http://localhost:5001/api/advisor/notifications/${advisorId}`
+        `https://haseeb-backend.onrender.com/api/advisor/notifications/${advisorId}`
       );
       setNotificationList(res.data || []);
     } catch (err) {
@@ -87,7 +87,7 @@ export default function DashboardAdvisorPanel({
     try {
       // 🔥 Get shared business data
       const res = await axios.get(
-        `http://localhost:5001/api/advisor/shared-business/${owner._id}`
+        `https://haseeb-backend.onrender.com/api/advisor/shared-business/${owner._id}`
       );
 
       // ❗ Backend returns: sharedBusiness
