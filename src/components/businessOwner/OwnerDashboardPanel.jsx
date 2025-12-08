@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { generateDashboardInsights } from "./InsightEngine";
 import "./OwnerDashboardPanel.css";
-const TICKETS_API_URL = "https://haseeb-backend.onrender.com/api/owner/${logged.userId}`";
+const TICKETS_API_URL = "https://haseeb-backend.onrender.com/api/tickets";
 
 export default function Dashboard({ baseData }) {
     const [shareLoading, setShareLoading] = useState(false);
@@ -76,17 +76,6 @@ Real burn rate: ${cashInsights.realBurnRate} SAR/month
 Top recommendations:
 ${topRecs || "No recommendations generated."}
             `.trim();
-
-            const res = await fetch(TICKETS_API_URL, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    fromUserId: logged.userId,
-                    fromRole: "owner",
-                    subject,
-                    message,
-                }),
-            });
 
             if (!res.ok) {
                 const err = await res.json().catch(() => ({}));
