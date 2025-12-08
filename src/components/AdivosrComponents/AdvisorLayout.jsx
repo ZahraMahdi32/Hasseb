@@ -11,7 +11,7 @@ import {
   FiStar,
 } from "react-icons/fi";
 import "../../SharedStyles/Layout.css";
-
+ 
 /* ============================
         HEADER
 =============================== */
@@ -24,7 +24,7 @@ export function Header({ theme = "light", onOpenMenu }) {
       document.body.setAttribute("data-theme", theme);
     }
   }, [theme]);
-
+ 
   return (
     <nav className="navbar shadow-sm sticky-top">
       <div className="container-fluid">
@@ -39,7 +39,7 @@ export function Header({ theme = "light", onOpenMenu }) {
     </nav>
   );
 }
-
+ 
 /* ============================
         SIDEBAR
 =============================== */
@@ -50,7 +50,7 @@ export function Sidebar({ tab, setTab, isOpen, onClose }) {
     { id: "recommendations", label: "Recommendations", icon: <FiStar /> },
     { id: "analyzer", label: "Analyzer", icon: <FiBarChart2 /> },
   ];
-
+ 
   /* ============================
         LOGOUT FIX
   =============================== */
@@ -60,43 +60,38 @@ export function Sidebar({ tab, setTab, isOpen, onClose }) {
     } catch (err) {
       console.error("Logout error:", err);
     }
-
-    // Redirect to login page
+ 
     window.location.href = "/";
   };
-
+ 
   return (
     <>
       {/* BACKDROP */}
-      {isOpen && (
-        <div
-          className="pm-backdrop-fixed"
-          onClick={onClose}
-          aria-hidden="true"
-        />
-      )}
-
+      {isOpen && <div className="pm-backdrop-fixed" onClick={onClose} aria-hidden="true" />}
+ 
       {/* SIDEBAR */}
       <aside
         id="pmSidebar"
         className={`sidebar-neo pm-slide ${isOpen ? "is-open" : ""}`}
         role="navigation"
       >
-        {/* LOGO */}
+        {/* LOGO — UPDATED DESIGN */}
         <div className="offcanvas-header sidebar-neo__brand">
-          <img
-            src="/assets/Haseeb.png"
-            alt="Haseeb Logo"
-            className="sidebar-logo-img"
-          />
+          <div className="d-flex align-items-center gap-2">
+            <img
+              src="/assets/HaseebLogo.png"
+              alt="Haseeb Logo"
+              className="sidebar-logo-img"
+            />
+          </div>
         </div>
-
+ 
         {/* MENU */}
         <div className="offcanvas-body p-0 d-flex flex-column">
           <nav className="py-3 px-3 flex-grow-1">
             {items.map((it) => {
               const active = tab === it.id;
-
+ 
               return (
                 <button
                   key={it.id}
@@ -113,7 +108,7 @@ export function Sidebar({ tab, setTab, isOpen, onClose }) {
               );
             })}
           </nav>
-
+ 
           {/* SUPPORT */}
           <div
             className="px-3 py-2 small text-muted"
@@ -126,7 +121,7 @@ export function Sidebar({ tab, setTab, isOpen, onClose }) {
             For Help & Support
           </div>
         </div>
-
+ 
         {/* DOCK AREA */}
         <div className="sidebar-neo__dock">
           <button
@@ -138,7 +133,7 @@ export function Sidebar({ tab, setTab, isOpen, onClose }) {
           >
             <FiUser size={18} />
           </button>
-
+ 
           <button
             className="sidebar-neo__dock-btn"
             onClick={() => {
@@ -149,7 +144,7 @@ export function Sidebar({ tab, setTab, isOpen, onClose }) {
             <FiBell size={18} />
           </button>
         </div>
-
+ 
         {/* LOGOUT */}
         <button className="sidebar-neo__logout" onClick={handleLogout}>
           <svg

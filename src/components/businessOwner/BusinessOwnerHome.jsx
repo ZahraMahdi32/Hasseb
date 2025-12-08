@@ -70,8 +70,9 @@ export default function OwnerHome() {
             const result = await response.json();
 
             if (result.success && result.data) {
-                // FIXED: Store the actual backend data (do NOT erase it)
                 setUploadedData(result.data);
+            } else {
+                setUploadedData(null);
             }
         } catch (error) {
             console.error("Error fetching business data:", error);
@@ -104,7 +105,9 @@ export default function OwnerHome() {
         );
     }
 
-    const username = JSON.parse(localStorage.getItem("loggedUser"))?.username;
+    const loggedUser = JSON.parse(localStorage.getItem("loggedUser"));
+    const username = loggedUser?.username;
+    const ownerId = loggedUser?.ownerId || loggedUser?.userId;
 
     return (
         <div style={{ minHeight: "100vh" }}>
@@ -123,7 +126,6 @@ export default function OwnerHome() {
             {/* Main Content */}
             <main className="owner-main">
                 <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-
                     {activeTool === "data" && (
                         <BusinessDataUpload onUploadSuccess={handleUploadSuccess} />
                     )}
@@ -150,8 +152,9 @@ export default function OwnerHome() {
 
                     {activeTool === "notifications" && <NotificationsPanel />}
 
-                    {activeTool === "scenarios" && username && (
-                        <ScenarioComparison username={username} />
+                    {/* ⭐ Now uses ownerId instead of username */}
+                    {activeTool === "scenarios" && ownerId && (
+                        <ScenarioComparison ownerId={ownerId} />
                     )}
 
                     {activeTool === "support" && (
@@ -168,9 +171,10 @@ export default function OwnerHome() {
                             setTab={setActiveTool}
                         />
                     )}
-                    {activeTool === "feedback" && (
-                        <OwnerFeedbackPanel ownerId={JSON.parse(localStorage.getItem("loggedUser"))?.ownerId} />
-                    )}                    
+
+                    {activeTool === "feedback" && ownerId && (
+                        <OwnerFeedbackPanel ownerId={ownerId} />
+                    )}
                 </div>
             </main>
         </div>

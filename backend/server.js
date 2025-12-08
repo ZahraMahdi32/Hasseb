@@ -17,8 +17,8 @@ const ownerRoutes = require("./src/routes/OwnerRoutes");
 const feedbackRoutes = require("./src/routes/feedbackRoutes");
 
 
-// Pricing Scenarios (THE CORRECT ONE)
-const pricingScenarioRoutes = require("./src/routes/pricingScenarioRoutes");
+// Pricing Scenarios 
+const scenarioRoutes = require("./src/routes/scenarioRoutes");
 
 // Manager-level routes
 const managerUserRoutes = require("./src/routes/ManagerRoutes/User");
@@ -54,10 +54,10 @@ app.use("/api/link", ownerAdvisorRoutes);
 app.use("/api/owner", ownerRoutes);
 
 // Pricing Scenarios (NEW SYSTEM ONLY)
-app.use("/api/pricing-scenarios", pricingScenarioRoutes);
+app.use("/api/pricing-scenarios", scenarioRoutes);
 
 // Manager routes
-app.use("/api/manager/users", managerUserRoutes);
+app.use("/api/users", managerUserRoutes);
 app.use("/api/tickets", ticketRoutes);
 app.use("/api/assignments", assignmentRoutes);
 
