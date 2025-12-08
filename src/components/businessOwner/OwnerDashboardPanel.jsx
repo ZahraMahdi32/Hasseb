@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { generateDashboardInsights } from "./InsightEngine";
 import "./OwnerDashboardPanel.css";
+const TICKETS_API_URL = "https://haseeb-backend.onrender.com/api/tickets";
 
 export default function Dashboard({ baseData }) {
     const [shareLoading, setShareLoading] = useState(false);
@@ -64,45 +65,35 @@ export default function Dashboard({ baseData }) {
                 return;
             }
 
-            // Get advisorId assigned to this owner
-            const owner = await fetch(
-                `https://haseeb-backend.onrender.com/api/owner/${logged.userId}`
-            ).then((r) => r.json());
-
-            const advisorId = owner?.advisorId;
-
-            if (!advisorId) {
-                setShareError("No advisor assigned to this owner.");
-                return;
-            }
-
-            const title = "New data shared";
+            const subject = "Simulation shared for advisor feedback";
+            const topRecs = recommendations.slice(0, 3).join(" | ");
             const message = `
-    Owner has shared new simulation data.
+Owner has shared a new simulation.
 
-    Health score: ${healthScore}/100
-    Real burn rate: ${cashInsights.realBurnRate} SAR/month
+Health score: ${healthScore}/100
+Real burn rate: ${cashInsights.realBurnRate} SAR/month
+
+Top recommendations:
+${topRecs || "No recommendations generated."}
             `.trim();
 
-            // SEND NOTIFICATION ONLY
-            const res = await fetch("https://haseeb-backend.onrender.com/api/advisor/notifications", {
+            const res = await fetch(TICKETS_API_URL, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    receiverId: advisorId,
-                    title,
-                    message,
+                    fromUserId: logged.userId,
                     fromRole: "owner",
+                    subject,
+                    message,
                 }),
             });
 
             if (!res.ok) {
                 const err = await res.json().catch(() => ({}));
-                throw new Error(err.message || "Failed to send notification.");
+                throw new Error(err.message || "Failed to share with advisor.");
             }
 
-            setShareSuccess("Shared with advisor successfully (notification only)!");
-
+            setShareSuccess("Shared with advisor successfully!");
         } catch (err) {
             console.error("handleShareWithAdvisor error:", err);
             setShareError(err.message || "Failed to share with advisor.");
@@ -110,7 +101,6 @@ export default function Dashboard({ baseData }) {
             setShareLoading(false);
         }
     }
-
 
     return (
         <div className="dashboard-container">
