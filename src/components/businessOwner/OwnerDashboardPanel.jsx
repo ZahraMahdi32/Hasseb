@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { generateDashboardInsights } from "./InsightEngine";
 import "./OwnerDashboardPanel.css";
-const TICKETS_API_URL = "https://haseeb-backend.onrender.com/api/tickets";
+const TICKETS_API_URL = "https://haseeb-backend.onrender.com/api/owner/${logged.userId}`";
 
 export default function Dashboard({ baseData }) {
     const [shareLoading, setShareLoading] = useState(false);
